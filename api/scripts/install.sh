@@ -1,7 +1,7 @@
 #!/bin/sh
 
 echo 'Clone erxes-api repository and install its dependencies:'
-git clone https://github.com/Herbafill-HFG/erxes-api.git
+git clone https://github.com/erxes/erxes-api.git
 cd erxes-api
 git checkout develop
 yarn install

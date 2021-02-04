@@ -11,6 +11,7 @@ export type IEngageScheduleDate = {
   type: string;
   month: string;
   day: string;
+  dateTime: string;
 } | null;
 
 export interface IEngageMessenger {
@@ -122,10 +123,10 @@ export interface IEngageMessage extends IEngageMessageDoc {
   logs?: Array<{ message: string }>;
   smsStats?: IEngageSmsStats;
   fromIntegration?: IIntegration;
+  createdUser: string;
 }
 
 // mutation types
-
 export type MutationVariables = {
   _id: string;
 };
@@ -140,6 +141,10 @@ export type SetPauseMutationResponse = {
 
 export type SetLiveMutationResponse = {
   setLiveMutation: (params: { variables: MutationVariables }) => Promise<void>;
+};
+
+export type CopyMutationResponse = {
+  copyMutation: (params: { variables: MutationVariables }) => Promise<void>;
 };
 
 export type SetLiveManualMutationResponse = {

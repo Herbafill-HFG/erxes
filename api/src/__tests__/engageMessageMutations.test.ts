@@ -267,7 +267,7 @@ describe('engage message mutation tests', () => {
       expect(e.message).toEqual('User not found');
     }
 
-    const integration = await integrationFactory({
+    await integrationFactory({
       brandId: brand._id,
       kind: KIND_CHOICES.MESSENGER
     });
@@ -301,6 +301,51 @@ describe('engage message mutation tests', () => {
 
     await engageUtils.send(emessageNoMessenger);
   }); // end engage utils send via messenger
+
+  test('Engage utils send pre scheduled message', async () => {
+    const now = new Date();
+
+    const scheduledEngage = await engageMessageFactory({
+      scheduleDate: {
+        type: 'pre',
+        dateTime: new Date(now.setHours(now.getHours() + 1))
+      }
+    });
+
+    await engageUtils.send(scheduledEngage);
+
+    const messages = await ConversationMessages.find({
+      'engageData.messageId': scheduledEngage._id
+    });
+
+    expect(messages.length).toEqual(0);
+
+    const customer = await customerFactory({});
+
+    const scheduledEngage2 = await engageMessageFactory({
+      scheduleDate: {
+        type: 'pre',
+        dateTime: new Date(now.setSeconds(now.getSeconds() + 1))
+      },
+      customerIds: [customer._id],
+      method: 'email',
+      isLive: true,
+      userId: _user._id
+    });
+
+    const mock = sinon.useFakeTimers({
+      now: new Date(now.setMinutes(now.getMinutes() + 1)),
+      toFake: ['Date']
+    });
+
+    await engageUtils.send(scheduledEngage2);
+
+    const engages = await EngageMessages.find({ 'scheduleDate.type': 'sent' });
+
+    expect(engages.length).toEqual(1);
+
+    mock.restore();
+  });
 
   test('Engage utils send via messenger without initial values', async () => {
     _customer.firstName = undefined;
@@ -729,20 +774,6 @@ describe('engage message mutation tests', () => {
       { email: 'email@yahoo.com' }
     );
 
-    mock = sinon.stub(api, 'engagesSendTestEmail').callsFake(() => {
-      return Promise.resolve('true');
-    });
-
-    await check(
-      `
-      mutation engageMessageSendTestEmail($from: String!, $to: String!, $content: String!) {
-        engageMessageSendTestEmail(from: $from, to: $to, content: $content)
-      }
-    `,
-      'engageMessageSendTestEmail',
-      { from: 'from@yahoo.com', to: 'to@yahoo.com', content: 'content' }
-    );
-
     mock.restore();
   });
 
@@ -781,5 +812,100 @@ describe('engage message mutation tests', () => {
     );
 
     expect(response.fromIntegration._id).toBe(integration._id);
+  });
+
+  test('Test engageMessageSendTestEmail()', async () => {
+    const sendRequest = args => {
+      return graphqlRequest(
+        `
+          mutation engageMessageSendTestEmail(
+            $from: String!,
+            $to: String!,
+            $content: String!,
+            $title: String!
+          ) {
+            engageMessageSendTestEmail(from: $from, to: $to, content: $content, title: $title)
+          }
+        `,
+        'engageMessageSendTestEmail',
+        args,
+        { dataSources }
+      );
+    };
+
+    const mock = sinon
+      .stub(dataSources.EngagesAPI, 'engagesSendTestEmail')
+      .callsFake(() => {
+        return Promise.resolve('true');
+      });
+
+    const params = {
+      from: 'from@yahoo.com',
+      to: 'to@yahoo.com',
+      content: 'content',
+      title: 'hello'
+    };
+
+    const response = await sendRequest(params);
+
+    expect(response).toBe('true');
+
+    // check missing title
+    try {
+      params.title = '';
+
+      await sendRequest(params);
+    } catch (e) {
+      expect(e[0].message).toBe(
+        'Email content, title, from address or to address is missing'
+      );
+    }
+
+    // check with valid customer
+    params.to = _customer.primaryEmail;
+    params.title = 'hello';
+
+    await sendRequest(params);
+
+    mock.restore();
+  });
+
+  test('test engageMessageCopy()', async () => {
+    const campaign = await engageMessageFactory();
+
+    const mutation = `
+      mutation engageMessageCopy($_id: String!) {
+        engageMessageCopy(_id: $_id) {
+          _id
+          createdBy
+          scheduleDate {
+            type
+          }
+          title
+          isDraft
+          isLive
+        }
+      }
+    `;
+
+    const response = await graphqlRequest(
+      mutation,
+      'engageMessageCopy',
+      { _id: campaign._id },
+      { dataSources, user: _user }
+    );
+
+    expect(response.createdBy).toBe(_user._id);
+    expect(response.title).toBe(`${campaign.title}-copied`);
+    expect(response.isDraft).toBe(true);
+    expect(response.isLive).toBe(false);
+    expect(response.scheduleDate).toBeFalsy();
+
+    // test non existing campaign
+    try {
+      await graphqlRequest(mutation, 'engageMessageCopy', { _id: 'fakeId' });
+    } catch (e) {
+      expect(e[0].message).toBe('Campaign not found');
+    }
   });
 });

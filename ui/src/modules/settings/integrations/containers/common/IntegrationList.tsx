@@ -11,7 +11,8 @@ import {
   CommonFieldsEditResponse,
   IntegrationMutationVariables,
   IntegrationsQueryResponse,
-  RemoveMutationResponse
+  RemoveMutationResponse,
+  RepairMutationResponse
 } from '../../types';
 import { integrationsListParams } from '../utils';
 
@@ -28,13 +29,15 @@ type FinalProps = {
 } & Props &
   RemoveMutationResponse &
   ArchiveIntegrationResponse &
-  CommonFieldsEditResponse;
+  CommonFieldsEditResponse &
+  RepairMutationResponse;
 
 const IntegrationListContainer = (props: FinalProps) => {
   const {
     integrationsQuery,
     removeMutation,
     archiveIntegration,
+    repairIntegration,
     editCommonFields
   } = props;
 
@@ -87,9 +90,19 @@ const IntegrationListContainer = (props: FinalProps) => {
     });
   };
 
+  const repair = (id: string) => {
+    repairIntegration({ variables: { _id: id } })
+      .then(() => {
+        Alert.success(`Sucess`);
+      })
+      .catch((error: Error) => {
+        Alert.error(error.message);
+      });
+  };
+
   const editIntegration = (
     id: string,
-    { name, brandId, channelIds }: IntegrationMutationVariables
+    { name, brandId, channelIds, data }: IntegrationMutationVariables
   ) => {
     if (!name && !brandId) {
       Alert.error('Name and brand must be chosen');
@@ -97,9 +110,11 @@ const IntegrationListContainer = (props: FinalProps) => {
       return;
     }
 
-    editCommonFields({ variables: { _id: id, name, brandId, channelIds } })
-      .then(({ data }) => {
-        const result = data.integrationsEditCommonFields;
+    editCommonFields({
+      variables: { _id: id, name, brandId, channelIds, data }
+    })
+      .then(response => {
+        const result = response.data.integrationsEditCommonFields;
 
         if (result && result._id) {
           Alert.success('Integration has been edited.');
@@ -112,6 +127,7 @@ const IntegrationListContainer = (props: FinalProps) => {
 
   const updatedProps = {
     ...props,
+    repair,
     integrations,
     removeIntegration,
     loading: integrationsQuery.loading,
@@ -173,6 +189,10 @@ export default withProps<Props>(
         options: mutationOptions
       }
     ),
+    graphql<Props, RepairMutationResponse>(gql(mutations.integrationsRepair), {
+      name: 'repairIntegration',
+      options: mutationOptions
+    }),
     graphql<Props, CommonFieldsEditResponse>(
       gql(mutations.integrationsEditCommonFields),
       {

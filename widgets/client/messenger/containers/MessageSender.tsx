@@ -1,6 +1,6 @@
-import * as React from "react";
-import { MessageSender } from "../components";
-import { AppConsumer, MESSAGE_TYPES } from "./AppContext";
+import * as React from 'react';
+import { MessageSender } from '../components';
+import { AppConsumer, MESSAGE_TYPES } from './AppContext';
 
 type Props = {
   placeholder?: string;
@@ -20,11 +20,13 @@ const Container = (props: Props) => {
         sendTypingInfo,
         sendFile,
         readMessages,
-        getMessengerData
+        getMessengerData,
+        inputDisabled
       }) => {
         return (
           <MessageSender
             {...props}
+            inputDisabled={inputDisabled}
             isAttachingFile={isAttachingFile}
             conversationId={activeConversation}
             sendTypingInfo={sendTypingInfo}
@@ -32,7 +34,6 @@ const Container = (props: Props) => {
               if (contentType === MESSAGE_TYPES.TEXT && !message.trim()) {
                 return;
               }
-
               sendMessage(contentType, message);
             }}
             readMessages={readMessages}

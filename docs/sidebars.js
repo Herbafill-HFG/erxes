@@ -8,23 +8,32 @@ module.exports = {
         'overview/overview',
         'overview/architecture-overview',
         'overview/deployment-overview',
-        'overview/integrations-overview',
-      ],
+        'overview/integrations-overview'
+      ]
     },
     {
       type: 'category',
       label: 'Installation Guide',
       items: [
-        'installation/ubuntu',
-        'installation/debian10',
-        'installation/centos8',
-        'installation/redhat8',
-        'installation/docker',
-        'installation/heroku',
+        {
+          // https://v2.docusaurus.io/docs/docs-introduction/#sidebar-object
+          Ubuntu: [
+            'installation/ubuntu',
+            {
+              Installation: [
+                'installation/ubuntu-quickstart',
+                'installation/ubuntu-step-by-step',
+                `installation/ubuntu-troubleshooting`
+              ]
+            }
+          ]
+        },
         'installation/aws',
         'installation/digitalocean',
-        'installation/upgrade',
-      ],
+        'installation/docker',
+        'installation/heroku',
+        'installation/upgrade'
+      ]
     },
 
     {
@@ -34,8 +43,8 @@ module.exports = {
         'administrator/creating-first-user',
         'administrator/environment-variables',
         'administrator/system-config',
-        'administrator/migration',
-      ],
+        'administrator/migration'
+      ]
     },
     {
       type: 'category',
@@ -48,9 +57,9 @@ module.exports = {
         'developer/android-sdk',
         'developer/ios-sdk',
         'developer/troubleshooting',
-        'developer/documentation_guide',
-      ],
-    },
+        'developer/documentation_guide'
+      ]
+    }
   ],
   tutorials: [
     {
@@ -69,12 +78,11 @@ module.exports = {
         'user/segments',
         'user/sales-pipeline',
         'user/engage',
-        'user/insights',
         'user/profile-settings',
         'user/notification',
         'user/mobile-apps',
-        'user/import',
-      ],
-    },
-  ],
+        'user/import'
+      ]
+    }
+  ]
 };

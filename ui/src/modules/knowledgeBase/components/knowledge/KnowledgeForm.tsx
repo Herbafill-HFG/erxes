@@ -1,4 +1,3 @@
-import { getEnv } from 'apolloClient';
 import Button from 'modules/common/components/Button';
 import EmptyState from 'modules/common/components/EmptyState';
 import FormControl from 'modules/common/components/form/Control';
@@ -14,7 +13,7 @@ import {
   IButtonMutateProps,
   IFormProps
 } from 'modules/common/types';
-import { __ } from 'modules/common/utils';
+import { __, getEnv } from 'modules/common/utils';
 import { FlexContent } from 'modules/layout/styles';
 import { IBrand } from 'modules/settings/brands/types';
 import SelectBrand from 'modules/settings/integrations/containers/SelectBrand';
@@ -141,7 +140,12 @@ class KnowledgeForm extends React.Component<Props, State> {
         <ReactMarkdown source={code} />
         {code ? (
           <CopyToClipboard text={code} onCopy={this.onCopy.bind(this, name)}>
-            <Button btnStyle="primary" size="small" icon="copy-1" uppercase={false}>
+            <Button
+              btnStyle="primary"
+              size="small"
+              icon="copy-1"
+              uppercase={false}
+            >
               {copied ? 'Copied' : 'Copy to clipboard'}
             </Button>
           </CopyToClipboard>
@@ -354,7 +358,7 @@ class KnowledgeForm extends React.Component<Props, State> {
             </Button>
           )}
           {renderButton({
-            name: 'knowledge base',
+            name: 'Knowledge Base',
             values: this.generateDoc(values),
             isSubmitted,
             callback: closeModal,

@@ -4,11 +4,13 @@ import {
   IIntegrationUiOptions,
   IParticipator,
   IUser
-} from "../types";
+} from '../types';
+import { ICarouselItem } from './components/bot/Carousel';
 
 export interface IWebsiteApp {
   kind: string;
   name: string;
+  _id: string;
   credentials: {
     buttonText: string;
     description: string;
@@ -50,14 +52,22 @@ export interface IMessage {
   createdAt: Date;
   internal?: boolean;
   engageData: IEngageData;
+  botData: any;
   messengerAppData: IMessengerAppData;
   attachments: IAttachment[];
+}
+
+
+
+export type EngageMessageQueryResponse = {
+  widgetsGetEngageMessage: IMessage;
 }
 
 export interface IConversation {
   _id: string;
   content: string;
   createdAt: Date;
+  operatorStatus?: string;
   participatedUsers?: IParticipator[];
   messages: IMessage[];
   isOnline: boolean;
@@ -115,4 +125,26 @@ export interface IMessengerSupporters {
   supporters: [IUser];
   isOnline: boolean;
   serverTime: string;
+}
+
+export interface IBotData {
+  type: string;
+  text?: string;
+  title?: string;
+  url?: string;
+  fromCustomer?: boolean;
+  module?: string;
+  component: string;
+  elements?: ICarouselItem[];
+  quick_replies?: [
+    {
+      title: string;
+      payload: string;
+    }
+  ];
+  wrapped?: {
+    type: string;
+    text: string;
+    typing: boolean;
+  };
 }

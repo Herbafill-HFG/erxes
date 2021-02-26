@@ -105,8 +105,8 @@ class VisitorForm extends React.Component<Props, State> {
     const { isActionLoading, kind } = this.props;
 
     const cancelButton = (
-      <Link to="/engage">
-        <Button btnStyle="simple" size="small" icon="cancel-1">
+      <Link to="/campaigns">
+        <Button btnStyle="simple" uppercase={false} icon="times-circle">
           Cancel
         </Button>
       </Link>
@@ -119,7 +119,7 @@ class VisitorForm extends React.Component<Props, State> {
             <Button
               disabled={isActionLoading}
               btnStyle="warning"
-              size="small"
+              uppercase={false}
               icon={isActionLoading ? undefined : 'file-alt'}
               onClick={this.handleSubmit.bind(this, 'draft')}
             >
@@ -128,8 +128,8 @@ class VisitorForm extends React.Component<Props, State> {
             <Button
               disabled={isActionLoading}
               btnStyle="success"
-              size="small"
-              icon={isActionLoading ? undefined : 'checked-1'}
+              uppercase={false}
+              icon={isActionLoading ? undefined : 'check-circle'}
               onClick={this.handleSubmit.bind(this, 'live')}
             >
               Save & Live
@@ -181,7 +181,7 @@ class VisitorForm extends React.Component<Props, State> {
         <Steps maxStep={maxStep} active={activeStep}>
           <Step
             img="/images/icons/erxes-02.svg"
-            title="Who is this message for?"
+            title="Who is this campaign for?"
           >
             <ConditionsRule
               rules={this.state.rules}
@@ -191,7 +191,7 @@ class VisitorForm extends React.Component<Props, State> {
 
           <Step
             img="/images/icons/erxes-08.svg"
-            title="Compose your message"
+            title="Compose your campaign"
             noButton={true}
           >
             <MessengerForm

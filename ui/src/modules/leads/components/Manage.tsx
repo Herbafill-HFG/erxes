@@ -1,9 +1,8 @@
-import { getEnv } from 'apolloClient';
 import Button from 'modules/common/components/Button';
 import EmptyState from 'modules/common/components/EmptyState';
 import Info from 'modules/common/components/Info';
 import { ModalFooter } from 'modules/common/styles/main';
-import { __ } from 'modules/common/utils';
+import { __, getEnv } from 'modules/common/utils';
 import { MarkdownWrapper } from 'modules/settings/styles';
 import React from 'react';
 import CopyToClipboard from 'react-copy-to-clipboard';
@@ -71,14 +70,14 @@ class Manage extends React.Component<Props, State> {
     let embedCode = '';
     let buttonCode = '';
     const integration = props.integration;
-    
+
     // showed install code automatically in edit mode
     if (integration._id) {
       const brand = integration.brand;
       const form = integration.form || {};
 
-      if(brand) {
-        code = getInstallCode(brand.code, form.code || '')
+      if (brand) {
+        code = getInstallCode(brand.code, form.code || '');
       }
 
       embedCode = getEmbedCode(form.code || '');
@@ -109,7 +108,11 @@ class Manage extends React.Component<Props, State> {
               </Button>
             </CopyToClipboard>
           ) : (
-            <EmptyState icon="copy" text="No copyable code. You should connect Popup to brand first" size="small" />
+            <EmptyState
+              icon="copy"
+              text="No copyable code. You should connect Popup to brand first"
+              size="small"
+            />
           )}
         </MarkdownWrapper>
         <br />

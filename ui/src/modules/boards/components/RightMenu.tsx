@@ -132,7 +132,10 @@ export default class RightMenu extends React.Component<Props, State> {
     const priorities = queryParams ? queryParams.priority : [];
 
     const onPrioritySelect = (ops: IOption[]) =>
-      onSelect(ops.map(option => option.value), 'priority');
+      onSelect(
+        ops.map(option => option.value),
+        'priority'
+      );
 
     return (
       <FilterBox>
@@ -167,11 +170,12 @@ export default class RightMenu extends React.Component<Props, State> {
             label: 'Assigned to no one'
           }}
         />
+
         <SelectLabel
           queryParams={queryParams}
           name="labelIds"
           onSelect={onSelect}
-          filterParams={{ pipelineId: queryParams.pipelineId }}
+          filterParams={{ pipelineId: queryParams.pipelineId || '' }}
           multi={true}
           customOption={{ value: '', label: 'No label chosen' }}
         />

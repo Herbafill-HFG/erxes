@@ -1,3 +1,4 @@
+import gql from 'graphql-tag';
 import Button from 'modules/common/components/Button';
 import DataWithLoader from 'modules/common/components/DataWithLoader';
 import DropdownToggle from 'modules/common/components/DropdownToggle';
@@ -7,9 +8,10 @@ import ModalTrigger from 'modules/common/components/ModalTrigger';
 import Pagination from 'modules/common/components/pagination/Pagination';
 import SortHandler from 'modules/common/components/SortHandler';
 import Table from 'modules/common/components/table';
+import withTableWrapper from 'modules/common/components/table/withTableWrapper';
 import { __, Alert, confirm, router } from 'modules/common/utils';
 import { menuContacts } from 'modules/common/utils/menus';
-import { CompaniesTableWrapper } from 'modules/companies/styles';
+import { queries } from 'modules/companies/graphql';
 import Wrapper from 'modules/layout/components/Wrapper';
 import { BarItems } from 'modules/layout/styles';
 import ManageColumns from 'modules/settings/properties/containers/ManageColumns';
@@ -45,6 +47,9 @@ interface IProps extends IRouterProps {
   mergeCompanies: () => void;
   queryParams: any;
   exportCompanies: (bulk: string[]) => void;
+  refetch?: () => void;
+  renderExpandButton?: any;
+  isExpand?: boolean;
 }
 
 type State = {
@@ -98,6 +103,14 @@ class CompaniesList extends React.Component<IProps, State> {
     e.target.value = tmpValue;
   };
 
+  afterTag = () => {
+    this.props.emptyBulk();
+
+    if (this.props.refetch) {
+      this.props.refetch();
+    }
+  };
+
   render() {
     const {
       columnsConfig,
@@ -108,15 +121,16 @@ class CompaniesList extends React.Component<IProps, State> {
       toggleBulk,
       bulk,
       isAllSelected,
-      emptyBulk,
       totalCount,
       mergeCompanies,
       queryParams,
-      exportCompanies
+      exportCompanies,
+      isExpand,
+      renderExpandButton
     } = this.props;
 
     const mainContent = (
-      <CompaniesTableWrapper>
+      <withTableWrapper.Wrapper>
         <Table whiteSpace="nowrap" bordered={true} hover={true}>
           <thead>
             <tr>
@@ -135,7 +149,7 @@ class CompaniesList extends React.Component<IProps, State> {
               <th>{__('Tags')}</th>
             </tr>
           </thead>
-          <tbody id="companies">
+          <tbody id="companies" className={isExpand ? 'expand' : ''}>
             {companies.map(company => (
               <CompanyRow
                 company={company}
@@ -148,7 +162,7 @@ class CompaniesList extends React.Component<IProps, State> {
             ))}
           </tbody>
         </Table>
-      </CompaniesTableWrapper>
+      </withTableWrapper.Wrapper>
     );
 
     const addTrigger = (
@@ -187,19 +201,26 @@ class CompaniesList extends React.Component<IProps, State> {
             Alert.error(error.message);
           });
 
+      const refetchQuery = {
+        query: gql(queries.companyCounts),
+        variables: { only: 'byTag' }
+      };
+
       actionBarLeft = (
         <BarItems>
           <TaggerPopover
             type="company"
-            successCallback={emptyBulk}
+            successCallback={this.afterTag}
             targets={bulk}
             trigger={tagButton}
+            refetchQueries={[refetchQuery]}
           />
 
           {bulk.length === 2 && (
             <ModalTrigger
               title="Merge Companies"
               size="lg"
+              dialogClassName="modal-1000w"
               trigger={mergeButton}
               content={companiesMerge}
             />
@@ -243,6 +264,8 @@ class CompaniesList extends React.Component<IProps, State> {
           onFocus={this.moveCursorAtTheEnd}
         />
 
+        {renderExpandButton()}
+
         <Dropdown className="dropdown-btn" alignRight={true}>
           <Dropdown.Toggle as={DropdownToggle} id="dropdown-customize">
             <Button btnStyle="simple" size="small">
@@ -264,7 +287,7 @@ class CompaniesList extends React.Component<IProps, State> {
             </li>
             <li>
               <a href="#export" onClick={exportCompanies.bind(this, bulk)}>
-                {__('Export companies')}
+                {__('Export this companies')}
               </a>
             </li>
           </Dropdown.Menu>
@@ -315,4 +338,7 @@ class CompaniesList extends React.Component<IProps, State> {
   }
 }
 
-export default withRouter<IRouterProps>(CompaniesList);
+export default withTableWrapper(
+  'Company',
+  withRouter<IRouterProps>(CompaniesList)
+);

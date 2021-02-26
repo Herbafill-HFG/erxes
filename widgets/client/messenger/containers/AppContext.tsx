@@ -29,6 +29,10 @@ interface IState {
   isAttachingFile: boolean;
   isBrowserInfoSaved: boolean;
   headHeight: number;
+  botTyping: boolean;
+  browserInfo: IBrowserInfo;
+  selectedSkill: string | null
+  inputDisabled: boolean;
 }
 
 interface IStore extends IState {
@@ -36,6 +40,7 @@ interface IStore extends IState {
   getUiOptions: () => IIntegrationUiOptions;
   getBrand: () => IBrand;
   getMessengerData: () => IIntegrationMessengerData;
+  onSelectSkill: (skillId: string) => void;
   saveBrowserInfo: () => void;
   toggle: (isVisible?: boolean) => void;
   toggleNotifier: (isVisible?: boolean) => void;
@@ -54,6 +59,14 @@ interface IStore extends IState {
   endConversation: () => void;
   readConversation: (conversationId: string) => void;
   readMessages: (conversationId: string) => void;
+  replyAutoAnswer: (message: string, payload: string, type: string) => void;
+  getBotInitialMessage: (callback: (bodData: any) => void) => void;
+  // getMessageSkills: (callback: (data: any) => void) => void;
+  changeOperatorStatus: (
+    _id: string,
+    operatorStatus: string,
+    callback: () => void
+  ) => void;
   sendMessage: (
     contentType: string,
     message: string,
@@ -64,6 +77,11 @@ interface IStore extends IState {
   setHeadHeight: (headHeight: number) => void;
   setUnreadCount: (count: number) => void;
   isLoggedIn: () => boolean;
+  setBotTyping: (typing: boolean) => void;
+  botTyping: boolean;
+  browserInfo: IBrowserInfo;
+  selectedSkill: string | null;
+  inputDisabled: boolean;
 }
 
 export const MESSAGE_TYPES = {
@@ -82,9 +100,10 @@ export class AppProvider extends React.Component<{}, IState> {
     super(props);
 
     let activeRoute = 'conversationList';
+    let inputDisabled = false;
 
     const { messengerData } = connection.data;
-    const { requireAuth, showChat } = messengerData;
+    const { requireAuth, showChat, skillData = {} } = messengerData;
 
     // if visitor did not give email or phone then ask
     if (!this.isLoggedIn() && requireAuth) {
@@ -99,6 +118,12 @@ export class AppProvider extends React.Component<{}, IState> {
       activeRoute = 'home';
     }
 
+    const { options = [] } = skillData;
+
+    if (options.length > 0) {
+      inputDisabled = true;
+    }
+
     this.state = {
       unreadCount: 0,
       sendingMessage: false,
@@ -111,7 +136,11 @@ export class AppProvider extends React.Component<{}, IState> {
       activeFaqArticle: null,
       isAttachingFile: false,
       isBrowserInfoSaved: false,
-      headHeight: 200
+      headHeight: 200,
+      botTyping: false,
+      browserInfo: {},
+      selectedSkill: null,
+      inputDisabled
     };
   }
 
@@ -156,6 +185,7 @@ export class AppProvider extends React.Component<{}, IState> {
       source: 'fromMessenger',
       callback: (browserInfo: IBrowserInfo) => {
         const variables = {
+          visitorId: connection.data.visitorId,
           customerId: connection.data.customerId,
           browserInfo
         };
@@ -169,7 +199,8 @@ export class AppProvider extends React.Component<{}, IState> {
           .then(({ data: { widgetsSaveBrowserInfo } }: any) => {
             this.setState({
               lastUnreadMessage: widgetsSaveBrowserInfo,
-              isBrowserInfoSaved: true
+              isBrowserInfoSaved: true,
+              browserInfo
             });
           });
       }
@@ -215,10 +246,17 @@ export class AppProvider extends React.Component<{}, IState> {
       connection.data.messengerData.requireAuth
     ) {
       // if visitor did not give email or phone then ask
-      return this.setState({ activeRoute: 'accquireInformation' });
+      return this.setState({ activeRoute: 'accquireInformation', selectedSkill: null });
     }
 
-    this.setState({ activeRoute: route });
+    const { skillData = {} } = connection.data.messengerData;
+    const { options = [] } = skillData;
+
+    this.setState({
+      activeRoute: route,
+      selectedSkill: null,
+      inputDisabled: options.length > 0
+    });
   };
 
   changeConversation = (_id: string) => {
@@ -241,11 +279,11 @@ export class AppProvider extends React.Component<{}, IState> {
     this.setState(options);
   };
 
-  goToWebsiteApp = (name: string) => {
-    this.setState({ currentWebsiteApp: name });
+  goToWebsiteApp = (id: string) => {
+    this.setState({ currentWebsiteApp: id });
 
-    this.changeRoute("websiteApp");
-  }
+    this.changeRoute('websiteApp');
+  };
 
   goToConversation = (conversationId: string) => {
     this.changeConversation(conversationId);
@@ -316,12 +354,14 @@ export class AppProvider extends React.Component<{}, IState> {
       .mutate({
         mutation: gql`
           mutation widgetsSaveCustomerGetNotified(
-            $customerId: String!
+            $customerId: String
+            $visitorId: String
             $type: String!
             $value: String!
           ) {
             widgetsSaveCustomerGetNotified(
               customerId: $customerId
+              visitorId: $visitorId
               type: $type
               value: $value
             )
@@ -330,18 +370,24 @@ export class AppProvider extends React.Component<{}, IState> {
 
         variables: {
           customerId: connection.data.customerId,
+          visitorId: connection.data.visitorId,
           type,
           value
         }
       })
 
       // after mutation
-      .then(() => {
+      .then(({ data: { widgetsSaveCustomerGetNotified } }: any) => {
+       
         this.setState({ isSavingNotified: false });
 
         if (callback) {
           callback();
         }
+
+        //cache customerId
+        setLocalStorageItem('customerId',widgetsSaveCustomerGetNotified._id)
+        connection.data.customerId = widgetsSaveCustomerGetNotified._id
 
         // save email
         setLocalStorageItem('getNotifiedType', type);
@@ -388,9 +434,6 @@ export class AppProvider extends React.Component<{}, IState> {
   };
 
   readMessages = (conversationId: string) => {
-    if (this.state.unreadCount === 0) {
-      return;
-    }
 
     client
       .mutate({
@@ -409,6 +452,10 @@ export class AppProvider extends React.Component<{}, IState> {
       });
   };
 
+  setBotTyping = (typing: boolean) => {
+    this.setState({ botTyping: typing });
+  };
+
   sendTypingInfo = (conversationId: string, text: string) => {
     const { lastSentTypingInfo } = this.state;
 
@@ -422,6 +469,114 @@ export class AppProvider extends React.Component<{}, IState> {
         variables: { conversationId, text }
       });
     });
+  };
+
+  changeOperatorStatus = (
+    _id: string,
+    operatorStatus: string,
+    callback: () => void
+  ) => {
+    return client
+      .mutate({
+        mutation: gql`
+          mutation changeConversationOperator(
+            $_id: String!
+            $operatorStatus: String!
+          ) {
+            changeConversationOperator(
+              _id: $_id
+              operatorStatus: $operatorStatus
+            )
+          }
+        `,
+        variables: {
+          _id,
+          operatorStatus
+        }
+      })
+      .then(() => {
+        if (callback) {
+          callback();
+        }
+      });
+  };
+
+  onSelectSkill = (skillId: string) => {
+    this.setState({ selectedSkill: skillId, inputDisabled: false });
+  }
+
+  getBotInitialMessage = (callback: (botData: any) => void) => {
+    return client.mutate({
+      mutation: gql`
+        mutation widgetGetBotInitialMessage(
+          $integrationId: String
+        ) {
+            widgetGetBotInitialMessage(
+            integrationId: $integrationId
+          )
+        }
+      `,
+      variables: {
+        integrationId: connection.data.integrationId,
+      }
+    })
+      .then(({ data }) => {
+        if (data.widgetGetBotInitialMessage) {
+          callback(data.widgetGetBotInitialMessage);
+        }
+      })
+  };
+
+  replyAutoAnswer = (message: string, payload: string, type: string) => {
+    this.setState({ sendingMessage: true });
+
+    return client
+      .mutate({
+        mutation: gql`
+          mutation widgetBotRequest(
+            $message: String!
+            $payload: String!
+            $type: String!
+            $conversationId: String
+            $customerId: String
+            $visitorId: String
+            $integrationId: String!
+          ) {
+            widgetBotRequest(
+              message: $message
+              payload: $payload
+              type: $type
+              conversationId: $conversationId
+              customerId: $customerId
+              visitorId: $visitorId
+              integrationId: $integrationId
+            )
+          }
+        `,
+        variables: {
+          conversationId: this.state.activeConversation,
+          integrationId: connection.data.integrationId,
+          customerId: connection.data.customerId,
+          visitorId: connection.data.visitorId,
+          message: newLineToBr(message),
+          type,
+          payload
+        }
+      })
+      .then(({ data }) => {
+        const { conversationId , customerId} = data.widgetBotRequest;
+
+        setLocalStorageItem('customerId',customerId);
+        connection.data.customerId = customerId;
+
+        this.setState({
+          sendingMessage: false,
+          activeConversation: conversationId
+        });
+      })
+      .catch(() => {
+        this.setState({ sendingMessage: false });
+      });
   };
 
   sendMessage = (
@@ -450,6 +605,7 @@ export class AppProvider extends React.Component<{}, IState> {
           createdAt: Number(new Date()),
           attachments: attachments || [],
           internal: false,
+          botData: null,
           fromBot: false,
           messengerAppData: null,
           videoCallData: null,
@@ -501,6 +657,7 @@ export class AppProvider extends React.Component<{}, IState> {
               $contentType: String
               $conversationId: String
               $attachments: [AttachmentInput]
+              $skillId: String
             ) {
 
             widgetsInsertMessage(
@@ -509,6 +666,7 @@ export class AppProvider extends React.Component<{}, IState> {
               message: $message
               conversationId: $conversationId
               attachments: $attachments
+              skillId: $skillId
             ) {
               ${graphqlTypes.messageFields}
             }
@@ -517,7 +675,9 @@ export class AppProvider extends React.Component<{}, IState> {
           variables: {
             integrationId: connection.data.integrationId,
             customerId: connection.data.customerId,
+            visitorId: connection.data.visitorId,
             conversationId: activeConversation,
+            skillId: this.state.selectedSkill,
             contentType,
             message: newLineToBr(message),
             attachments
@@ -534,6 +694,12 @@ export class AppProvider extends React.Component<{}, IState> {
 
           if (!activeConversation) {
             this.changeConversation(widgetsInsertMessage.conversationId);
+          }
+
+          if (!connection.data.customerId) {
+            connection.data.customerId = widgetsInsertMessage.customerId;
+            connection.data.visitorId = null;
+            setLocalStorageItem("customerId", widgetsInsertMessage.customerId);
           }
         })
 
@@ -600,12 +766,19 @@ export class AppProvider extends React.Component<{}, IState> {
           endConversation: this.endConversation,
           readConversation: this.readConversation,
           readMessages: this.readMessages,
+          replyAutoAnswer: this.replyAutoAnswer,
+          getBotInitialMessage: this.getBotInitialMessage,
+          onSelectSkill: this.onSelectSkill,
+          changeOperatorStatus: this.changeOperatorStatus,
           sendMessage: this.sendMessage,
           sendTypingInfo: this.sendTypingInfo,
+          setBotTyping: this.setBotTyping,
           sendFile: this.sendFile,
           setHeadHeight: this.setHeadHeight,
           setUnreadCount: this.setUnreadCount,
-          isLoggedIn: this.isLoggedIn
+          isLoggedIn: this.isLoggedIn,
+          browserInfo: this.state.browserInfo,
+          inputDisabled: this.state.inputDisabled
         }}
       >
         {this.props.children}

@@ -1,7 +1,6 @@
-export interface IEmailSignature {
-  brandId?: string;
-  signature?: string;
-}
+import { IEmailSignature as IEmailSignatureC } from 'erxes-ui/lib/auth/types';
+
+export type IEmailSignature = IEmailSignatureC;
 
 export interface IEmailSignatureWithBrand extends IEmailSignature {
   brandName?: string;
@@ -14,9 +13,7 @@ export type UsersConfigEmailSignaturesMutationVariables = {
 };
 
 export type UsersConfigEmailSignaturesMutationResponse = {
-  saveMutation: (
-    params: {
-      variables: UsersConfigEmailSignaturesMutationVariables;
-    }
-  ) => Promise<void>;
+  saveMutation: (params: {
+    variables: UsersConfigEmailSignaturesMutationVariables;
+  }) => Promise<void>;
 };

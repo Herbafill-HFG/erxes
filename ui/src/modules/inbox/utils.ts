@@ -1,3 +1,4 @@
+import { getConfig, setConfig } from 'erxes-ui/lib/utils/core';
 import gql from 'graphql-tag';
 import queryString from 'query-string';
 import { queries } from './graphql';
@@ -14,7 +15,8 @@ export const generateParams = queryParams => ({
   participating: queryParams.participating,
   starred: queryParams.starred,
   startDate: queryParams.startDate,
-  endDate: queryParams.endDate
+  endDate: queryParams.endDate,
+  awaitingResponse: queryParams.awaitingResponse
 });
 
 export const refetchSidebarConversationsOptions = () => {
@@ -30,22 +32,17 @@ export const refetchSidebarConversationsOptions = () => {
   };
 };
 
-export const getConfig = (key: string) => {
-  const sidebarConfig = localStorage.getItem(key);
-
-  if (sidebarConfig) {
-    return JSON.parse(sidebarConfig);
-  }
-};
-
-export const setConfig = (key, params) => {
-  localStorage.setItem(key, JSON.stringify(params));
-};
+export { getConfig };
+export { setConfig };
 
 export const isConversationMailKind = (conversation: IConversation) => {
-  const {
-    integration: { kind }
-  } = conversation;
+  // const integration = conversation.integration ? conversation.integration || {};
+  const integration = conversation.integration || {};
+  const { kind } = integration;
+
+  if (!kind) {
+    return false;
+  }
 
   return kind === 'gmail' || kind.includes('nylas');
 };
@@ -70,20 +67,19 @@ export const extractEmail = (str?: string) => {
   return emails.join(' ');
 };
 
-export const urlify = (text: string) => {
-  const urlRegex = /(\b((https?|ftp|file):\/\/)?(www\.)[-A-Z0-9+&@#%?=~_|!:,.;]*[-A-Z0-9+&@#%=~_|])/gi;
+export const linkify = (url: string) => {
+  return url.startsWith('http') ? url : `http://${url}`;
+};
 
-  let content = text.replace(urlRegex, url => {
-    if (url.includes('http://') || url.includes('https://')) {
-      return '<a href="' + url + '" target="_blank">' + url + '</a>';
+export const urlify = (text: string) => {
+  // validate url except html a tag
+  const urlRegex = /(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w-]+)+[\w\-_~:/?#[\]@!&',;=.]+(?![^<>]*>|[^"]*?<\/a)/g;
+
+  return text.replace(urlRegex, url => {
+    if (url.startsWith('http')) {
+      return `<a href="${url}" target="_blank">${url}</a>`;
     }
 
-    return '<a href="https://' + url + '" target="_blank">' + url + '</a>';
+    return `<a href="http://${url}" target="_blank">${url}</a>`;
   });
-
-  if (text.includes('<a href="')) {
-    content = text.replace('<a href="', '<a target="_blank" href="');
-  }
-
-  return content;
 };

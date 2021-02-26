@@ -34,11 +34,21 @@ class BrandRow extends React.Component<Props> {
     );
 
     const content = props => (
-      <BrandForm {...props} brand={brand} renderButton={renderButton} />
+      <BrandForm
+        {...props}
+        brand={brand}
+        extended={true}
+        renderButton={renderButton}
+      />
     );
 
     return (
-      <ModalTrigger title="Edit" trigger={editTrigger} content={content} />
+      <ModalTrigger
+        size="lg"
+        title="Edit"
+        trigger={editTrigger}
+        content={content}
+      />
     );
   };
 
@@ -46,7 +56,11 @@ class BrandRow extends React.Component<Props> {
     const { brand, isActive } = this.props;
 
     return (
-      <SidebarListItem key={brand._id} isActive={isActive}>
+      <SidebarListItem
+        id={'ManageIntegrationUL'}
+        key={brand._id}
+        isActive={isActive}
+      >
         <Link to={`?_id=${brand._id}`}>{brand.name}</Link>
         <ActionButtons>
           {this.renderEditAction()}

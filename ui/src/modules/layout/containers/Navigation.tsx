@@ -26,6 +26,7 @@ class NavigationContainer extends React.Component<{
 
         this.props.unreadConversationsCountQuery.refetch();
 
+        // no need to send notification for bot message
         sendDesktopNotification({
           title: 'You have a new message',
           content: strip(content || '')

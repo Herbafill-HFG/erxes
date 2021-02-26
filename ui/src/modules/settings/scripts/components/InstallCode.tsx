@@ -1,7 +1,7 @@
-import { getEnv } from 'apolloClient';
 import Button from 'modules/common/components/Button';
 import EmptyState from 'modules/common/components/EmptyState';
 import { ModalFooter } from 'modules/common/styles/main';
+import { getEnv } from 'modules/common/utils';
 import { MarkdownWrapper } from 'modules/settings/styles';
 import React from 'react';
 import CopyToClipboard from 'react-copy-to-clipboard';
@@ -64,7 +64,12 @@ class InstallCode extends React.Component<Props, State> {
           <ReactMarkdown source={this.state.code} />
           {this.state.code ? (
             <CopyToClipboard text={this.state.code} onCopy={this.onCopy}>
-              <Button size="small" btnStyle="primary" icon="copy-1" uppercase={false}>
+              <Button
+                size="small"
+                btnStyle="primary"
+                icon="copy-1"
+                uppercase={false}
+              >
                 {this.state.copied ? 'Copied' : 'Copy to clipboard'}
               </Button>
             </CopyToClipboard>

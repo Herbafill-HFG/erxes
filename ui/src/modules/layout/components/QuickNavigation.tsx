@@ -7,9 +7,10 @@ import NameCard from 'modules/common/components/nameCard/NameCard';
 import Tip from 'modules/common/components/Tip';
 import { colors } from 'modules/common/styles';
 import { lighten, rgba } from 'modules/common/styles/color';
-import { __ } from 'modules/common/utils';
+import { __, can } from 'modules/common/utils';
 import Widget from 'modules/notifications/containers/Widget';
 import NotificationSettings from 'modules/settings/profile/containers/NotificationSettings';
+import Version from 'modules/settings/status/containers/Version';
 import React from 'react';
 import Dropdown from 'react-bootstrap/Dropdown';
 import { Link, NavLink } from 'react-router-dom';
@@ -18,11 +19,15 @@ import { UserHelper } from '../styles';
 import BrandChooser from './BrandChooser';
 
 const Signature = asyncComponent(() =>
-  import(/* webpackChunkName:"Signature" */ 'modules/settings/email/containers/Signature')
+  import(
+    /* webpackChunkName:"Signature" */ 'modules/settings/email/containers/Signature'
+  )
 );
 
 const ChangePassword = asyncComponent(() =>
-  import(/* webpackChunkName:"ChangePassword" */ 'modules/settings/profile/containers/ChangePassword')
+  import(
+    /* webpackChunkName:"ChangePassword" */ 'modules/settings/profile/containers/ChangePassword'
+  )
 );
 
 const UserInfo = styled.div`
@@ -32,7 +37,11 @@ const UserInfo = styled.div`
 
   span {
     float: none;
-    margin: 0 5px 0 10px;
+    margin: 0 5px 0 0;
+  }
+
+  i {
+    width: 10px;
   }
 `;
 
@@ -46,9 +55,13 @@ const NavItem = styled.div`
   vertical-align: middle;
 
   > a {
-    color: ${colors.textPrimary};
+    color: ${colors.textSecondary};
     display: flex;
     align-items: center;
+
+    &:hover {
+      color: ${colors.colorSecondary};
+    }
   }
 
   .dropdown-menu {
@@ -56,24 +69,9 @@ const NavItem = styled.div`
   }
 `;
 
-const Square = styled(NavItem)`
-  padding: 0;
-  background: ${rgba(colors.colorSecondary, 0.1)};
-  transition: background 0.3s ease;
-
-  &:hover {
-    background: ${rgba(colors.colorSecondary, 0.18)};
-  }
-
-  > a {
-    padding: 0 14px 0 17px;
-    color: ${colors.colorSecondary};
-    display: block;
-    line-height: 48px;
-  }
-`;
-
 const Round = styled(NavItem)`
+  padding-left: 24px;
+
   > a {
     padding: 0 10px;
     background: ${lighten(colors.colorPrimary, 5)};
@@ -87,6 +85,7 @@ const Round = styled(NavItem)`
     &.active,
     &:hover {
       background: ${lighten(colors.colorPrimary, 15)};
+      color: ${rgba(colors.colorWhite, 0.8)};
     }
   }
 
@@ -137,16 +136,27 @@ const QuickNavigation = ({
   }
 
   return (
-    <nav>
+    <nav id={'SettingsNav'}>
       {brandsCombo}
 
-      <Tip text={__('Task')} placement="bottom">
-        <Square>
+      {can('showCalendars', currentUser) && (
+        <NavItem>
+          <Tip text={__('Calendar')} placement="bottom">
+            <Link to="/calendar">
+              <Icon icon="calendar-alt" size={20} />
+            </Link>
+          </Tip>
+        </NavItem>
+      )}
+
+      <NavItem>
+        <Tip text={__('Task')} placement="bottom">
           <Link to="/task">
-            <Icon icon="file-check-alt" size={19} />
+            <Icon icon="file-check-alt" size={21} />
           </Link>
-        </Square>
-      </Tip>
+        </Tip>
+      </NavItem>
+
       <Round>
         <NavLink to="/tutorial#defaultStage">
           <Icon icon="question-circle" size={20} />{' '}
@@ -157,7 +167,7 @@ const QuickNavigation = ({
         <Widget />
       </NavItem>
       <NavItem>
-        <Link to="/settings">
+        <Link id="Settings" to="/settings">
           <Icon icon="cog" size={20} />
         </Link>
       </NavItem>
@@ -167,7 +177,7 @@ const QuickNavigation = ({
             <UserHelper>
               <UserInfo>
                 <NameCard.Avatar user={currentUser} size={30} />
-                <Icon icon="angle-down" />
+                <Icon icon="angle-down" size={14} />
               </UserInfo>
             </UserHelper>
           </Dropdown.Toggle>
@@ -185,7 +195,7 @@ const QuickNavigation = ({
               title="Change Password"
               trigger={
                 <li>
-                  <a href="#change-password">{__('Change Password')}</a>
+                  <a href="#change-password">{__('Change password')}</a>
                 </li>
               }
               content={passContent}
@@ -214,6 +224,7 @@ const QuickNavigation = ({
 
             <Dropdown.Divider />
             <Dropdown.Item onClick={logout}>{__('Sign out')}</Dropdown.Item>
+            <Version kind="plain" />
           </Dropdown.Menu>
         </Dropdown>
       </NavItem>

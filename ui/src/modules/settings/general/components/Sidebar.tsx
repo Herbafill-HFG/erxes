@@ -40,13 +40,13 @@ class Sidebar extends React.Component {
   render() {
     return (
       <LeftSidebar full={true} header={this.renderSidebarHeader()}>
-        <List>
+        <List id="SettingsSidebar">
           {this.renderListItem('/settings/general', 'General system config')}
           {this.renderListItem(
             '/settings/integration-configs',
             'Integrations config'
           )}
-          {this.renderListItem('/settings/engage-configs', 'Engage config')}
+          {this.renderListItem('/settings/campaign-configs', 'Campaign config')}
         </List>
       </LeftSidebar>
     );

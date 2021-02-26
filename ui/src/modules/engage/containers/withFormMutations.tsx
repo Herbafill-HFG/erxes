@@ -63,7 +63,7 @@ function withSaveAndEdit<IComponentProps>(Component) {
             Alert.success(msg);
 
             history.push({
-              pathname: '/engage',
+              pathname: '/campaigns',
               search: '?engageRefetchList=true'
             });
           })
@@ -135,7 +135,8 @@ function withSaveAndEdit<IComponentProps>(Component) {
             ? {
                 type: scheduleDate.type,
                 month: scheduleDate.month,
-                day: scheduleDate.day
+                day: scheduleDate.day,
+                dateTime: scheduleDate.dateTime
               }
             : null
         }

@@ -40,6 +40,15 @@ const integrationDetail = `
       
       messengerData
       uiOptions
+      websiteMessengerApps {
+        credentials
+      }
+      knowledgeBaseMessengerApps {
+        credentials
+      }
+      leadMessengerApps {
+        credentials
+      }
     }
   }
 `;
@@ -82,6 +91,7 @@ const integrations = `
         name
         code
       }
+      webhookData
       leadData
       formId
       tagIds
@@ -95,24 +105,8 @@ const integrations = `
         title
         code
       }
+      healthStatus
     }
-  }
-`;
-
-const messengerApps = `
-  query messengerApps($kind: String) {
-    messengerApps(kind: $kind) {
-      _id
-      kind
-      name
-      showInInbox
-    }
-  }
-`;
-
-const messengerAppsCount = `
-  query messengerAppsCount($kind: String) {
-    messengerAppsCount(kind: $kind)
   }
 `;
 
@@ -142,7 +136,5 @@ export default {
   integrationTotalCount,
   integrations,
   engagesConfigDetail,
-  messengerApps,
-  messengerAppsCount,
   integrationGetLineWebhookUrl
 };

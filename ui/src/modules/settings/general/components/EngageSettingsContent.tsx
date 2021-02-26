@@ -130,12 +130,12 @@ class EngageSettingsContent extends React.Component<Props, State> {
         <Info>
           <p>
             {__(
-              'Amazon Simple Email Service enables you to send and receive email using a reliable and scalable email platform. Set up your custom amazon simple email service account.'
-            )}
+              'Amazon Simple Email Service enables you to send and receive email using a reliable and scalable email platform. Set up your custom amazon simple email service account'
+            ) + '.'}
           </p>
           <a
             target="_blank"
-            href="https://docs.erxes.io/administrator/system-config#aws-ses"
+            href="https://erxes.org/administrator/system-config#aws-ses"
             rel="noopener noreferrer"
           >
             {__('Learn more about Amazon SES configuration')}
@@ -191,6 +191,21 @@ class EngageSettingsContent extends React.Component<Props, State> {
           />
         </FormGroup>
 
+        <FormGroup>
+          <ControlLabel>Allowed email skip limit</ControlLabel>
+          <p>
+            The number of times that each customer can skip to open or click
+            engage emails. If this limit is exceeded, then the customer will
+            automatically set to
+            <strong> do not disturb </strong>mode.
+          </p>
+          <FormControl
+            {...formProps}
+            name="allowedEmailSkipLimit"
+            defaultValue={configsMap.allowedEmailSkipLimit || 10}
+          />
+        </FormGroup>
+
         <ModalFooter>
           {renderButton({
             name: 'configsMap',
@@ -205,12 +220,14 @@ class EngageSettingsContent extends React.Component<Props, State> {
 
   render() {
     return (
-      <ContentBox>
+      <ContentBox id={'EngageSettingsMenu'}>
         <CollapseContent title="General settings">
           <Form renderContent={this.renderContent} />
         </CollapseContent>
 
-        <CollapseContent title="Verify the email addresses that you send email from ">
+        <CollapseContent
+          title={__('Verify the email addresses that you send email from')}
+        >
           {this.renderVerifiedEmails()}
 
           <Verify>
@@ -231,7 +248,7 @@ class EngageSettingsContent extends React.Component<Props, State> {
             </Button>
           </Verify>
         </CollapseContent>
-        <CollapseContent title="Send your first testing email">
+        <CollapseContent title={__('Send your first testing email')}>
           <FormGroup>
             <ControlLabel>From</ControlLabel>
             <FormControl
@@ -251,7 +268,7 @@ class EngageSettingsContent extends React.Component<Props, State> {
           <FormGroup>
             <ControlLabel>Content</ControlLabel>
             <FormControl
-              placeholder="Write your content..."
+              placeholder={__('Write your content') + '...'}
               componentClass="textarea"
               onChange={this.onChangeCommon.bind(this, 'testContent')}
             />

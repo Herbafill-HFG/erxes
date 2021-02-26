@@ -1,11 +1,9 @@
-import { getEnv } from 'apolloClient';
 import Button from 'modules/common/components/Button';
 import EmptyState from 'modules/common/components/EmptyState';
-import { ControlLabel } from 'modules/common/components/form';
 import Info from 'modules/common/components/Info';
 import { Tabs, TabTitle } from 'modules/common/components/tabs';
 import { ModalFooter } from 'modules/common/styles/main';
-import { __ } from 'modules/common/utils';
+import { __, getEnv } from 'modules/common/utils';
 import { IIntegration } from 'modules/settings/integrations/types';
 import { MarkdownWrapper } from 'modules/settings/styles';
 import React from 'react';
@@ -22,10 +20,9 @@ type Props = {
 type State = {
   basicCode: string;
   singlePageCode: string;
-  erxesSdkOpenSource: string;
-  erxesSdkSaas: string;
-  objectiveSdkOpenSource: string;
-  objectiveSdkSaas: string;
+  swift: string;
+  objc: string;
+  android: string;
   copied: boolean;
   singleCopied: boolean;
   contentCopied: boolean;
@@ -80,23 +77,14 @@ const singlePageInstall = brandCode => {
   `;
 };
 
-const openSourceSDK = brandCode => {
-  return `Erxes.setup(erxesWidgetsApiUrl: "your_erxes-widgets-api_url_here", erxesApiUrl: 
-    "your_erxes-api_url_here", brandCode: "${brandCode}")`;
+const swiftSdkInstall = brandCode => {
+  const { REACT_APP_API_URL } = getEnv();
+  return `Erxes.setup(erxesApiUrl: "${REACT_APP_API_URL}", brandId: "${brandCode}")`;
 };
 
-const saasSDK = brandCode => {
-  return `Erxes.setupSaas(companyName: "Registered_Company_Name", brandCode: "${brandCode}")`;
-};
-
-const openSourceObjective = brandCode => {
-  return `[Erxes setupWithErxesWidgetsApiUrl:@"your_erxes-widgets-api_url_here" 
-  erxesApiUrl:@"your_erxes-api_url_here" brandCode:@"${brandCode}"];`;
-};
-
-const saasObjective = brandCode => {
-  return `[Erxes setupSaasWithCompanyName:@"Registered_Company_Name" 
-  brandCode:@"${brandCode}"]`;
+const objcSdkInstall = brandCode => {
+  const { REACT_APP_API_URL } = getEnv();
+  return `[Erxes setupWithErxesApiUrl:@"${REACT_APP_API_URL}" brandId:@"${brandCode}"];`;
 };
 
 const objectiveSDK = `target '<Your Target Name>' do
@@ -133,20 +121,24 @@ const buildgradle = `allprojects {
   }`;
 
 const dependency = `dependencies {
-    implementation 'com.github.erxes:erxes-android-sdk:1.0.3-rc1'
+    implementation 'com.github.erxes:erxes-android-sdk:{latest_release}'
   }`;
 
-const androidClass = `public class CustomActivity extends AppCompatActivity {
-    Config config;
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        config = new Config.Builder("brandid")
-                .setApiHost("https://url/graphql")
-                .setSubscriptionHost("wss://url/subscriptions")
-                .setUploadHost("https://url/upload-file")
-                .build(this);
-    }
-  }`;
+const androidSdkInstall = brandCode => {
+  const { REACT_APP_API_URL, REACT_APP_API_SUBSCRIPTION_URL } = getEnv();
+
+  return `public class CustomActivity extends AppCompatActivity {
+      Config config;
+      @Override
+      protected void onCreate(Bundle savedInstanceState) {
+          config = new Config.Builder("${brandCode}")
+                  .setApiHost("https://${REACT_APP_API_URL}/graphql")
+                  .setSubscriptionHost("${REACT_APP_API_SUBSCRIPTION_URL}")
+                  .setUploadHost("https://${REACT_APP_API_URL}/upload-file")
+                  .build(this);
+      }
+    }`;
+};
 
 const loginChat = `public void onClick(View view) {
   config.Start();
@@ -165,10 +157,9 @@ class InstallCode extends React.PureComponent<Props, State> {
 
     let basicCode = '';
     let singlePageCode = '';
-    let erxesSdkOpenSource = '';
-    let erxesSdkSaas = '';
-    let objectiveSdkOpenSource = '';
-    let objectiveSdkSaas = '';
+    let swift = '';
+    let objc = '';
+    let android = '';
     const integration = props.integration || {};
 
     // showed install code automatically in edit mode
@@ -177,19 +168,17 @@ class InstallCode extends React.PureComponent<Props, State> {
 
       basicCode = getInstallCode(brand.code);
       singlePageCode = singlePageInstall(brand.code);
-      erxesSdkOpenSource = openSourceSDK(brand.code);
-      erxesSdkSaas = saasSDK(brand.code);
-      objectiveSdkOpenSource = openSourceObjective(brand.code);
-      objectiveSdkSaas = saasObjective(brand.code);
+      swift = swiftSdkInstall(brand.code);
+      objc = objcSdkInstall(brand.code);
+      android = androidSdkInstall(brand.code);
     }
 
     this.state = {
       basicCode,
-      erxesSdkOpenSource,
-      erxesSdkSaas,
+      swift,
       singlePageCode,
-      objectiveSdkOpenSource,
-      objectiveSdkSaas,
+      objc,
+      android,
       currentTab: 'basic',
       copied: false,
       singleCopied: false,
@@ -240,47 +229,48 @@ class InstallCode extends React.PureComponent<Props, State> {
           </h4>
           <ol>
             <li>
-              Add Erxes SDK to your iOS project in Xcode:
+              {__('Add Erxes SDK to your iOS project in Xcode:')}
               <MarkdownWrapper>
                 <pre>{iosSDK}</pre>
               </MarkdownWrapper>
-              then run <b>pod install</b> in terminal
+              {__('then run')} <b>{__(' pod install ')}</b>
+              {__('in terminal')}
             </li>
             <li>
-              Add a "Privacy - Photo Library Usage Description" entry to your
-              Info.plist. This is
+              {__(
+                `Add a 'Privacy - Photo Library Usage Description' entry to your`
+              ) + ' Info.plist.'}
               <a href="https://developer.apple.com/library/content/qa/qa1937/_index.html">
                 {' '}
-                required by Apple{' '}
+                {__('This is required by Apple')}{' '}
               </a>
-              and gives your users permission to upload images.
+              {__('and gives your users permission to upload images')}.
             </li>
             <li>
-              Import ErxesSDK into AppDelegate.swift then paste the following
-              code into <b>didFinishLaunchingWithOptions method:</b>
+              {__(
+                'Import ErxesSDK into AppDelegate.swift then paste the following code into'
+              )}{' '}
+              {<b>didFinishLaunchingWithOptions {__('method:')}</b>}
               <br />
               <br />
-              <ControlLabel>Open source:</ControlLabel>
               <MarkdownWrapper>
-                <pre>{this.state.erxesSdkOpenSource}</pre>
-              </MarkdownWrapper>
-              <ControlLabel>Saas:</ControlLabel>
-              <MarkdownWrapper>
-                <pre>{this.state.erxesSdkSaas}</pre>
+                <pre>{this.state.swift}</pre>
               </MarkdownWrapper>
             </li>
             <li>
-              Import ErxesSDK into your UIViewController class and you can start
-              Erxes with following options: <br />
+              {__(
+                'Import ErxesSDK into your UIViewController class and you can start Erxes with following options:'
+              )}{' '}
+              <br />
               <ol type="a">
                 <li>
-                  <b>Without user data</b>
+                  <b>{__('Without user data')}</b>
                   <MarkdownWrapper>
                     <pre>Erxes.start()</pre>
                   </MarkdownWrapper>
                 </li>
                 <li>
-                  <b>With user data</b>
+                  <b>{__('With user data')}</b>
                   <MarkdownWrapper>
                     <pre>{withUserData}</pre>
                   </MarkdownWrapper>
@@ -294,48 +284,45 @@ class InstallCode extends React.PureComponent<Props, State> {
           </h4>
           <ol>
             <li>
-              Add Erxes SDK to your iOS project in Xcode:
+              {__('Add Erxes SDK to your iOS project in Xcode:')}
               <MarkdownWrapper>
                 <pre>{objectiveSDK}</pre>
               </MarkdownWrapper>
             </li>
             <li>
-              Add a "Privacy - Photo Library Usage Description" entry to your
-              Info.plist. This is
+              {__(
+                `Add a 'Privacy - Photo Library Usage Description' entry to your`
+              ) + ' Info.plist.'}
               <a href="https://developer.apple.com/library/content/qa/qa1937/_index.html">
                 {' '}
-                required by Apple{' '}
+                {__('This is required by Apple')}{' '}
               </a>
-              and gives your users permission to upload images.
+              {__('and gives your users permission to upload images')}.
             </li>
             <li>
               {`#import <ErxesSDK/ErxesSDK-Swift.h> into`} AppDelegate.swift
-              then paste the following code into{' '}
+              {__('then paste the following code into')}{' '}
               <b>didFinishLaunchingWithOptions method:</b>
               <br />
               <br />
-              <ControlLabel>Open source:</ControlLabel>
               <MarkdownWrapper>
-                <pre>{this.state.objectiveSdkOpenSource}</pre>
-              </MarkdownWrapper>
-              <ControlLabel>Saas:</ControlLabel>
-              <MarkdownWrapper>
-                <pre>{this.state.objectiveSdkSaas}</pre>
+                <pre>{this.state.objc}</pre>
               </MarkdownWrapper>
             </li>
             <li>
-              {`#import <ErxesSDK/ErxesSDK-Swift.h> into`} into your
-              UIViewController.m class and you can start Erxes with following
-              options: <br />
+              {`#import <ErxesSDK/ErxesSDK-Swift.h>`} {__('into your')}
+              UIViewController.m{' '}
+              {__('class and you can start Erxes with following options:')}{' '}
+              <br />
               <ol type="a">
                 <li>
-                  <b>Without user data</b>
+                  <b>{__('Without user data')}</b>
                   <MarkdownWrapper>
                     <pre>[Erxes startWithData:nil];</pre>
                   </MarkdownWrapper>
                 </li>
                 <li>
-                  <b>With user data</b>
+                  <b>{__('With user data')}</b>
                   <MarkdownWrapper>
                     <pre>{withUserDataObjective}</pre>
                   </MarkdownWrapper>
@@ -351,39 +338,44 @@ class InstallCode extends React.PureComponent<Props, State> {
       return (
         <ol>
           <li>
-            <b>Add the JitPack repository to your build file </b> <br />
-            Add it in your root build.gradle at the end of repositories:
+            <b> {__('Add the JitPack repository to your build file')} </b>{' '}
+            <br />
+            {__('Add it in your root')} {'build.gradle'}{' '}
+            {__('at the end of repositories:')}
             <MarkdownWrapper>
               <pre>{buildgradle}</pre>
             </MarkdownWrapper>
           </li>
           <li>
-            <b>Add the dependency</b> <br />
+            <b>{__('Add the dependency')}</b> <br />
             <MarkdownWrapper>
               <pre>{dependency}</pre>
             </MarkdownWrapper>
           </li>
           <li>
-            <b>Default configuration</b> <br />
-            <b>* brandCode</b> - generated unique code of your brand <br />
-            <b>* apiHost</b> - erxes-widgets-api server url <br />
-            <b>* subsHost</b> - erxes-api subscription url <br />
-            <b>* uploadUrl</b> - erxes-api server url
+            <b>{__('Default configuration')}</b> <br />
+            <b>* brandCode</b> - {__('generated unique code of your brand')}{' '}
+            <br />
+            <b>* apiHost</b> - {__('erxes-widgets-api server url')} <br />
+            <b>* subsHost</b> - {__('erxes-api subscription url')} <br />
+            <b>* uploadUrl</b> - {__('erxes-api server url')}
             <MarkdownWrapper>
-              <pre>{androidClass}</pre>
+              <pre>{this.state.android}</pre>
             </MarkdownWrapper>
           </li>
           <li>
-            <b>Start chat</b> <br />
-            Call a chat with login form
+            <b>{__('Start chat')}</b> <br />
+            {__('Call a chat with login form')}
             <MarkdownWrapper>
               <pre>{loginChat}</pre>
             </MarkdownWrapper>
           </li>
           <li>
-            <b>Start chat</b> <br />
-            If your application has already registered with user , give user’s
-            information with this way <br />
+            <b>{__('Start chat')}</b> <br />
+            {__(
+              'If your application has already registered with user , give user’s information with this way'
+            )}{' '}
+            <br />
             <MarkdownWrapper>
               <pre>{startChat}</pre>
             </MarkdownWrapper>
@@ -458,14 +450,15 @@ class InstallCode extends React.PureComponent<Props, State> {
     switch (currentTab) {
       case 'basic':
         description = __(
-          'For websites and web apps with full-page refreshes. Paste the code below before the body tag on every page you want erxes chat to appear'
+          'Paste the following code before the body tag on every page you want erxes widget to appear'
         );
         script = basicCode;
         action = copied;
         break;
       case 'single':
-        description =
-          'For web apps built with asynchronous JavaScript. Paste the code below in main layout you want erxes chat to appear';
+        description = __(
+          'For web apps built with asynchronous JavaScript. Paste the code below in main layout you want erxes chat to appear'
+        );
         script = singlePageCode;
         action = singleCopied;
         break;

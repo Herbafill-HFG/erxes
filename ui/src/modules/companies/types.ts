@@ -1,48 +1,16 @@
-import { ITag } from 'modules/tags/types';
+import {
+  AddMutationResponse as AddMutationResponseC,
+  CompaniesQueryResponse as CompaniesQueryResponseC,
+  ICompany as ICompanyC,
+  ICompanyDoc as ICompanyDocC,
+  ICompanyLinks as ICompanyLinksC
+} from 'erxes-ui/lib/companies/types';
+import { QueryResponse } from 'modules/common/types';
 import { IActivityLog, IActivityLogForMonth } from '../activityLogs/types';
-import { IUser } from '../auth/types';
-import { ICustomer } from '../customers/types';
 
-export interface ICompanyLinks {
-  linkedIn?: string;
-  twitter?: string;
-  facebook?: string;
-  github?: string;
-  youtube?: string;
-  website?: string;
-}
+export type ICompanyLinks = ICompanyLinksC;
 
-export interface ICompanyDoc {
-  createdAt?: Date;
-  modifiedAt?: Date;
-  avatar?: string;
-
-  primaryName?: string;
-  names?: string[];
-  size?: number;
-  industry?: string;
-  website?: string;
-  plan?: string;
-  state?: string;
-  parentCompanyId?: string;
-
-  ownerId?: string;
-
-  emails?: string[];
-  primaryEmail?: string;
-
-  primaryPhone?: string;
-  phones?: string[];
-
-  businessType?: string;
-  description?: string;
-  employees?: number;
-  doNotDisturb?: string;
-  links: ICompanyLinks;
-  tagIds?: string[];
-  customFieldsData?: any;
-  code?: string;
-}
+export type ICompanyDoc = ICompanyDocC;
 
 export interface IActivityLogYearMonthDoc {
   year: number;
@@ -54,13 +22,7 @@ export interface ICompanyActivityLog {
   list: IActivityLog[];
 }
 
-export interface ICompany extends ICompanyDoc {
-  _id: string;
-  owner: IUser;
-  parentCompany: ICompany;
-  getTags: ITag[];
-  customers: ICustomer[];
-}
+export type ICompany = ICompanyC;
 
 // mutation types
 
@@ -73,9 +35,9 @@ export type RemoveMutationVariables = {
 };
 
 export type RemoveMutationResponse = {
-  companiesRemove: (
-    params: { variables: RemoveMutationVariables }
-  ) => Promise<any>;
+  companiesRemove: (params: {
+    variables: RemoveMutationVariables;
+  }) => Promise<any>;
 };
 
 export type MergeMutationVariables = {
@@ -84,17 +46,14 @@ export type MergeMutationVariables = {
 };
 
 export type MergeMutationResponse = {
-  companiesMerge: (
-    params: { variables: MergeMutationVariables }
-  ) => Promise<any>;
+  companiesMerge: (params: {
+    variables: MergeMutationVariables;
+  }) => Promise<any>;
 };
 
-export type AddMutationResponse = {
-  companiesAdd: (params: { variables: ICompanyDoc }) => Promise<any>;
-};
+export type AddMutationResponse = AddMutationResponseC;
 
 // query types
-
 export type ListQueryVariables = {
   page?: number;
   perPage?: number;
@@ -115,15 +74,9 @@ type ListConfig = {
 
 export type MainQueryResponse = {
   companiesMain: { list: ICompany[]; totalCount: number };
-  loading: boolean;
-  refetch: () => void;
-};
+} & QueryResponse;
 
-export type CompaniesQueryResponse = {
-  companies: ICompany[];
-  loading: boolean;
-  refetch: () => void;
-};
+export type CompaniesQueryResponse = CompaniesQueryResponseC;
 
 export type ListConfigQueryResponse = {
   fieldsDefaultColumnsConfig: ListConfig[];
@@ -153,6 +106,4 @@ type CompanyCounts = {
 
 export type CountQueryResponse = {
   companyCounts: CompanyCounts;
-  loading: boolean;
-  refetch: () => void;
-};
+} & QueryResponse;

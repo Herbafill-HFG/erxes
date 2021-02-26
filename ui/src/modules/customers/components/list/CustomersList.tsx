@@ -10,7 +10,13 @@ import ModalTrigger from 'modules/common/components/ModalTrigger';
 import Pagination from 'modules/common/components/pagination/Pagination';
 import SortHandler from 'modules/common/components/SortHandler';
 import Table from 'modules/common/components/table';
+import withTableWrapper from 'modules/common/components/table/withTableWrapper';
 import { menuContacts } from 'modules/common/utils/menus';
+import routerUtils from 'modules/common/utils/router';
+import {
+  EMAIL_VALIDATION_STATUSES,
+  PHONE_VALIDATION_STATUSES
+} from 'modules/customers/constants';
 import { queries } from 'modules/customers/graphql';
 import { EMPTY_CONTENT_CONTACTS } from 'modules/settings/constants';
 import React from 'react';
@@ -48,21 +54,29 @@ interface IProps extends IRouterProps {
     doc: { customerIds: string[] },
     emptyBulk: () => void
   ) => void;
-  mergeCustomers: (
-    doc: {
-      ids: string[];
-      data: any;
-      callback: () => void;
-    }
-  ) => Promise<void>;
+  mergeCustomers: (doc: {
+    ids: string[];
+    data: any;
+    callback: () => void;
+  }) => Promise<void>;
   verifyCustomers: (doc: { verificationType: string }) => void;
+  changeVerificationStatus: (doc: {
+    verificationType: string;
+    status: string;
+    customerIds: string[];
+  }) => Promise<void>;
   queryParams: any;
   exportData: (bulk: Array<{ _id: string }>) => void;
   responseId: string;
+  refetch?: () => void;
+  renderExpandButton?: any;
+  isExpand?: boolean;
 }
 
 type State = {
   searchValue?: string;
+  searchType?: string;
+  showDropDown?: boolean;
 };
 
 class CustomersList extends React.Component<IProps, State> {
@@ -72,8 +86,21 @@ class CustomersList extends React.Component<IProps, State> {
     super(props);
 
     this.state = {
-      searchValue: this.props.searchValue,
+      searchValue: this.props.searchValue
     };
+  }
+
+  componentDidUpdate() {
+    const { queryParams, history, type } = this.props;
+    const { searchValue, searchType } = this.state;
+
+    if (searchValue && !queryParams.searchValue) {
+      if (searchType === type) {
+        routerUtils.setParams(history, { searchValue });
+      } else {
+        this.setState({ searchValue: '' });
+      }
+    }
   }
 
   onChange = () => {
@@ -82,10 +109,10 @@ class CustomersList extends React.Component<IProps, State> {
     toggleAll(customers, 'customers');
   };
 
-  removeCustomers = (customers) => {
+  removeCustomers = customers => {
     const customerIds: string[] = [];
 
-    customers.forEach((customer) => {
+    customers.forEach(customer => {
       customerIds.push(customer._id);
     });
 
@@ -100,6 +127,26 @@ class CustomersList extends React.Component<IProps, State> {
     verifyCustomers({ verificationType });
   };
 
+  onTargetSelect = () => {
+    if (this.state.showDropDown) {
+      this.setState({ showDropDown: false });
+    } else {
+      this.setState({ showDropDown: true });
+    }
+  };
+
+  changeVerificationStatus = (type: string, status: string, customers) => {
+    const customerIds: string[] = [];
+
+    customers.forEach(customer => {
+      customerIds.push(customer._id);
+    });
+
+    const { changeVerificationStatus } = this.props;
+
+    changeVerificationStatus({ verificationType: type, status, customerIds });
+  };
+
   renderContent() {
     const {
       customers,
@@ -108,52 +155,55 @@ class CustomersList extends React.Component<IProps, State> {
       toggleBulk,
       history,
       isAllSelected,
+      isExpand
     } = this.props;
 
     return (
-      <Table whiteSpace="nowrap" hover={true} bordered={true}>
-        <thead>
-          <tr>
-            <th>
-              <FormControl
-                checked={isAllSelected}
-                componentClass="checkbox"
-                onChange={this.onChange}
-              />
-            </th>
-            {columnsConfig.map(({ name, label }) => (
-              <th key={name}>
-                <SortHandler sortField={name} label={__(label)} />
+      <withTableWrapper.Wrapper>
+        <Table whiteSpace="nowrap" hover={true} bordered={true}>
+          <thead>
+            <tr>
+              <th>
+                <FormControl
+                  checked={isAllSelected}
+                  componentClass="checkbox"
+                  onChange={this.onChange}
+                />
               </th>
+              {columnsConfig.map(({ name, label }) => (
+                <th key={name}>
+                  <SortHandler sortField={name} label={__(label)} />
+                </th>
+              ))}
+              <th>{__('Tags')}</th>
+            </tr>
+          </thead>
+          <tbody id="customers" className={isExpand ? 'expand' : ''}>
+            {customers.map(customer => (
+              <CustomerRow
+                customer={customer}
+                columnsConfig={columnsConfig}
+                key={customer._id}
+                isChecked={bulk.includes(customer)}
+                toggleBulk={toggleBulk}
+                history={history}
+              />
             ))}
-            <th>{__('Tags')}</th>
-          </tr>
-        </thead>
-        <tbody id="customers">
-          {customers.map((customer) => (
-            <CustomerRow
-              customer={customer}
-              columnsConfig={columnsConfig}
-              key={customer._id}
-              isChecked={bulk.includes(customer)}
-              toggleBulk={toggleBulk}
-              history={history}
-            />
-          ))}
-        </tbody>
-      </Table>
+          </tbody>
+        </Table>
+      </withTableWrapper.Wrapper>
     );
   }
 
-  search = (e) => {
+  search = e => {
     if (this.timer) {
       clearTimeout(this.timer);
     }
 
-    const { history } = this.props;
+    const { history, type } = this.props;
     const searchValue = e.target.value;
 
-    this.setState({ searchValue });
+    this.setState({ searchValue, searchType: type });
 
     this.timer = setTimeout(() => {
       router.removeParams(history, 'page');
@@ -168,6 +218,14 @@ class CustomersList extends React.Component<IProps, State> {
     e.target.value = tmpValue;
   }
 
+  afterTag = () => {
+    this.props.emptyBulk();
+
+    if (this.props.refetch) {
+      this.props.refetch();
+    }
+  };
+
   render() {
     const {
       type,
@@ -181,7 +239,8 @@ class CustomersList extends React.Component<IProps, State> {
       history,
       queryParams,
       exportData,
-      mergeCustomerLoading,
+      renderExpandButton,
+      mergeCustomerLoading
     } = this.props;
 
     const addTrigger = (
@@ -190,13 +249,53 @@ class CustomersList extends React.Component<IProps, State> {
       </Button>
     );
 
+    const onEmailStatusClick = e => {
+      this.changeVerificationStatus('email', e.target.id, bulk);
+    };
+
+    const onPhoneStatusClick = e => {
+      this.changeVerificationStatus('phone', e.target.id, bulk);
+    };
+
+    const emailVerificationStatusList = [] as any;
+
+    for (const status of EMAIL_VALIDATION_STATUSES) {
+      emailVerificationStatusList.push(
+        <li key={status.value}>
+          <a
+            id={status.value}
+            href="#changeStatus"
+            onClick={onEmailStatusClick}
+          >
+            {status.label}
+          </a>
+        </li>
+      );
+    }
+
+    const phoneVerificationStatusList = [] as any;
+
+    for (const status of PHONE_VALIDATION_STATUSES) {
+      phoneVerificationStatusList.push(
+        <li key={status.value}>
+          <a
+            id={status.value}
+            href="#changeStatus"
+            onClick={onPhoneStatusClick}
+          >
+            {status.label}
+          </a>
+        </li>
+      );
+    }
+
     const editColumns = <a href="#edit">{__('Choose Properties/View')}</a>;
 
     const dateFilter = queryParams.form && (
       <DateFilter queryParams={queryParams} history={history} />
     );
 
-    const manageColumns = (props) => {
+    const manageColumns = props => {
       return (
         <ManageColumns
           {...props}
@@ -207,7 +306,7 @@ class CustomersList extends React.Component<IProps, State> {
       );
     };
 
-    const customerForm = (props) => {
+    const customerForm = props => {
       return (
         <CustomerForm
           {...props}
@@ -218,7 +317,7 @@ class CustomersList extends React.Component<IProps, State> {
       );
     };
 
-    const customersMerge = (props) => {
+    const customersMerge = props => {
       return (
         <CustomersMerge
           {...props}
@@ -239,6 +338,8 @@ class CustomersList extends React.Component<IProps, State> {
           autoFocus={true}
           onFocus={this.moveCursorAtTheEnd}
         />
+
+        {renderExpandButton()}
 
         {dateFilter}
 
@@ -263,7 +364,9 @@ class CustomersList extends React.Component<IProps, State> {
             </li>
             <li>
               <a href="#export" onClick={exportData.bind(this, bulk)}>
-                {type === 'lead' ? __('Export leads') : __('Export contacts')}
+                {type === 'lead'
+                  ? __('Export this leads')
+                  : __('Export this contacts')}
               </a>
             </li>
             <li>
@@ -323,13 +426,13 @@ class CustomersList extends React.Component<IProps, State> {
           .then(() => {
             this.removeCustomers(bulk);
           })
-          .catch((e) => {
+          .catch(e => {
             Alert.error(e.message);
           });
 
       const refetchQuery = {
         query: gql(queries.customerCounts),
-        variables: { only: 'byTag' },
+        variables: { type, only: 'byTag' }
       };
 
       actionBarLeft = (
@@ -338,7 +441,7 @@ class CustomersList extends React.Component<IProps, State> {
 
           <TaggerPopover
             type="customer"
-            successCallback={emptyBulk}
+            successCallback={this.afterTag}
             targets={bulk}
             trigger={tagButton}
             refetchQueries={[refetchQuery]}
@@ -347,10 +450,38 @@ class CustomersList extends React.Component<IProps, State> {
             <ModalTrigger
               title="Merge Customers"
               size="lg"
+              dialogClassName="modal-1000w"
               trigger={mergeButton}
               content={customersMerge}
             />
           )}
+
+          <Dropdown
+            className="dropdown-btn"
+            alignRight={true}
+            onClick={this.onTargetSelect}
+          >
+            <Dropdown.Toggle as={DropdownToggle} id="dropdown-customize">
+              <Button btnStyle="simple" size="small">
+                {__('Change email status ')} <Icon icon="angle-down" />
+              </Button>
+            </Dropdown.Toggle>
+            <Dropdown.Menu>
+              <div>{emailVerificationStatusList}</div>
+            </Dropdown.Menu>
+          </Dropdown>
+
+          <Dropdown className="dropdown-btn" alignRight={true}>
+            <Dropdown.Toggle as={DropdownToggle} id="dropdown-customize">
+              <Button btnStyle="simple" size="small">
+                {__('Change phone status ')} <Icon icon="angle-down" />
+              </Button>
+            </Dropdown.Toggle>
+            <Dropdown.Menu>
+              <div>{phoneVerificationStatusList}</div>
+            </Dropdown.Menu>
+          </Dropdown>
+
           <Button
             btnStyle="danger"
             size="small"
@@ -392,4 +523,4 @@ class CustomersList extends React.Component<IProps, State> {
   }
 }
 
-export default withRouter(CustomersList);
+export default withTableWrapper('Customer', withRouter(CustomersList));

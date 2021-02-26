@@ -2,6 +2,7 @@ import gql from 'graphql-tag';
 import * as compose from 'lodash.flowright';
 import EmptyContent from 'modules/common/components/empty/EmptyContent';
 import EmptyState from 'modules/common/components/EmptyState';
+import Spinner from 'modules/common/components/Spinner';
 import { IRouterProps } from 'modules/common/types';
 import { withProps } from 'modules/common/utils';
 import React from 'react';
@@ -22,15 +23,18 @@ class Board extends React.Component<Props> {
   render() {
     const { pipelineDetailQuery, queryParams, options } = this.props;
 
+    if (pipelineDetailQuery && pipelineDetailQuery.loading) {
+      return <Spinner />;
+    }
+
     if (!pipelineDetailQuery || !pipelineDetailQuery.pipelineDetail) {
-      
       const type = options.type;
 
-      if (type === "deal" || type === "task") {
+      if (type === 'deal' || type === 'task') {
         return (
-          <EmptyContent 
-            content={type === "deal" ? EMPTY_CONTENT_DEAL : EMPTY_CONTENT_TASK} 
-            maxItemWidth="400px" 
+          <EmptyContent
+            content={type === 'deal' ? EMPTY_CONTENT_DEAL : EMPTY_CONTENT_TASK}
+            maxItemWidth="400px"
           />
         );
       }

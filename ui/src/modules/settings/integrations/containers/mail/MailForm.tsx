@@ -6,7 +6,12 @@ import { IUser } from 'modules/auth/types';
 import Spinner from 'modules/common/components/Spinner';
 import { Alert, withProps } from 'modules/common/utils';
 import { queries as messageQueries } from 'modules/inbox/graphql';
-import { IMail } from 'modules/inbox/types';
+import { IMail, IMessage } from 'modules/inbox/types';
+import {
+  EmailTemplatesQueryResponse,
+  EmailTemplatesTotalCountQueryResponse
+} from 'modules/settings/emailTemplates/containers/List';
+import { queries as templatesQuery } from 'modules/settings/emailTemplates/graphql';
 import { mutations, queries } from 'modules/settings/integrations/graphql';
 import * as React from 'react';
 import { graphql } from 'react-apollo';
@@ -19,55 +24,98 @@ import {
 } from './constants';
 
 type Props = {
+  clearOnSubmit?: boolean;
   integrationId?: string;
   brandId?: string;
   conversationId?: string;
   refetchQueries?: string[];
   fromEmail?: string;
+  customerId?: string;
   mailData?: IMail;
   isReply?: boolean;
   isForward?: boolean;
   replyAll?: boolean;
   createdAt?: Date;
+  mails?: IMessage[];
+  messageId?: string;
   toggleReply?: (toAll?: boolean) => void;
   closeModal?: () => void;
   closeReply?: () => void;
+  callback?: () => void;
 };
 
 type FinalProps = {
   currentUser: IUser;
   sendMailMutation: any;
+  emailTemplatesQuery: EmailTemplatesQueryResponse;
+  emailTemplatesTotalCountQuery: EmailTemplatesTotalCountQueryResponse;
   integrationsQuery: IntegrationsQueryResponse;
 } & Props;
 
 const MailFormContainer = (props: FinalProps) => {
   const {
     mailData,
+    customerId,
     conversationId,
     integrationsQuery,
     isReply,
     closeModal,
     closeReply,
+    emailTemplatesQuery,
+    emailTemplatesTotalCountQuery,
     sendMailMutation,
-    currentUser
+    currentUser,
+    mails,
+    messageId
   } = props;
 
   if (integrationsQuery.loading) {
     return <Spinner objective={true} />;
   }
 
+  const fetchMoreEmailTemplates = (page: number) => {
+    const { fetchMore, emailTemplates } = emailTemplatesQuery;
+    const { emailTemplatesTotalCount } = emailTemplatesTotalCountQuery;
+
+    if (emailTemplatesTotalCount === emailTemplates.length) {
+      return;
+    }
+
+    return fetchMore({
+      variables: { page },
+      updateQuery: (prev, { fetchMoreResult }) => {
+        if (!fetchMoreResult) {
+          return prev;
+        }
+
+        return Object.assign({}, prev, {
+          emailTemplates: [
+            ...prev.emailTemplates,
+            ...fetchMoreResult.emailTemplates
+          ]
+        });
+      }
+    });
+  };
+
   const integrations = integrationsQuery.integrations || [];
 
   const save = ({
     variables,
     optimisticResponse,
-    update
+    update,
+    callback
   }: {
     variables: any;
     optimisticResponse?: any;
+    callback?: () => void;
     update?: any;
   }) => {
-    return sendMailMutation({ variables, optimisticResponse, update })
+    return sendMailMutation({
+      variables: { ...variables, customerId },
+      optimisticResponse,
+      update
+    })
       .then(() => {
         Alert.success('You have successfully sent a email');
 
@@ -84,6 +132,10 @@ const MailFormContainer = (props: FinalProps) => {
         if (closeModal) {
           closeModal();
         }
+
+        if (callback) {
+          callback();
+        }
       })
       .catch(e => {
         Alert.error(e.message);
@@ -94,9 +146,15 @@ const MailFormContainer = (props: FinalProps) => {
       });
   };
 
-  const sendMail = ({ variables }: { variables: any }) => {
+  const sendMail = ({
+    variables,
+    callback
+  }: {
+    variables: any;
+    callback: () => void;
+  }) => {
     if (!isReply) {
-      return save({ variables });
+      return save({ variables, callback });
     }
 
     const email = mailData ? mailData.integrationEmail : '';
@@ -162,7 +220,11 @@ const MailFormContainer = (props: FinalProps) => {
     sendMail,
     integrations,
     currentUser,
-    emailSignatures: currentUser.emailSignatures || []
+    fetchMoreEmailTemplates,
+    emailTemplates: emailTemplatesQuery.emailTemplates,
+    emailSignatures: currentUser.emailSignatures || [],
+    mails,
+    messageId
   };
 
   return <MailForm {...updatedProps} />;
@@ -178,6 +240,18 @@ export default withProps<Props>(
           fetchPolicy: 'network-only'
         };
       }
+    }),
+    graphql<Props, EmailTemplatesQueryResponse>(
+      gql(templatesQuery.emailTemplates),
+      {
+        name: 'emailTemplatesQuery',
+        options: () => ({
+          variables: { page: 1 }
+        })
+      }
+    ),
+    graphql<Props, any>(gql(templatesQuery.totalCount), {
+      name: 'emailTemplatesTotalCountQuery'
     }),
     graphql<Props>(gql(mutations.integrationSendMail), {
       name: 'sendMailMutation',

@@ -21,8 +21,23 @@ const configsConstants = `
     configsConstants
   }
 `;
+
+const checkActivateInstallation = `
+  query configsCheckActivateInstallation($hostname: String!) {
+    configsCheckActivateInstallation(hostname: $hostname)
+  }
+`;
+
+const configsGetEmailTemplate = `
+  query configsGetEmailTemplate($name: String) {
+    configsGetEmailTemplate(name: $name)
+  }
+`;
+
 export default {
   configs,
   configsConstants,
-  configsGetEnv
+  configsGetEnv,
+  checkActivateInstallation,
+  configsGetEmailTemplate
 };

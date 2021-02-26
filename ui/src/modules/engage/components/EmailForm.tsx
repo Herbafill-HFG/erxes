@@ -1,4 +1,5 @@
-import EditorCK from 'modules/common/components/EditorCK';
+import { IUser } from 'modules/auth/types';
+import Button from 'modules/common/components/Button';
 import ErrorMsg from 'modules/common/components/ErrorMsg';
 import FormControl from 'modules/common/components/form/Control';
 import FormGroup from 'modules/common/components/form/Group';
@@ -8,11 +9,12 @@ import Icon from 'modules/common/components/Icon';
 import { FlexItem, FlexPad } from 'modules/common/components/step/styles';
 import Tip from 'modules/common/components/Tip';
 import Uploader from 'modules/common/components/Uploader';
+import EditorCK from 'modules/common/containers/EditorCK';
 import { ISelectedOption } from 'modules/common/types';
 import { __ } from 'modules/common/utils';
-import { EMAIL_CONTENT } from 'modules/engage/constants';
 import {
   EditorContainer,
+  TestEmailWrapper,
   VerifyCancel,
   VerifyCheck,
   VerifyStatus
@@ -23,13 +25,31 @@ import { IEmailFormProps, IEngageEmail, IEngageScheduleDate } from '../types';
 import { generateEmailTemplateParams } from '../utils';
 import Scheduler from './Scheduler';
 
-type Props = IEmailFormProps & { verifiedEmails: string[]; error?: string };
+type EmailParams = {
+  content: string;
+  from: string;
+  to: string;
+  title: string;
+};
+
+type Props = IEmailFormProps & {
+  verifiedEmails: string[];
+  error?: string;
+  sendTestEmail: (params: EmailParams) => void;
+};
 
 type State = {
   fromUserId: string;
   content: string;
   email: IEngageEmail;
   scheduleDate?: IEngageScheduleDate;
+  testEmail?: string;
+};
+
+const getEmail = (users: IUser[], fromUserId: string): string => {
+  const user = users.find(u => u._id === fromUserId);
+
+  return user && user.email ? user.email : '';
 };
 
 class EmailForm extends React.Component<Props, State> {
@@ -40,7 +60,8 @@ class EmailForm extends React.Component<Props, State> {
       fromUserId: props.fromUserId,
       content: props.content,
       email: props.email,
-      scheduleDate: props.scheduleDate
+      scheduleDate: props.scheduleDate,
+      testEmail: getEmail(props.users, props.fromUserId)
     };
   }
 
@@ -154,6 +175,48 @@ class EmailForm extends React.Component<Props, State> {
     );
   }
 
+  renderTestEmailSection() {
+    const { email, sendTestEmail, users } = this.props;
+    const { fromUserId, testEmail, content } = this.state;
+
+    const onChange = e => {
+      const value = (e.target as HTMLInputElement).value;
+
+      this.setState({ testEmail: value });
+    };
+
+    const sendAsTest = () => {
+      sendTestEmail({
+        from: getEmail(users, fromUserId),
+        to: testEmail || '',
+        content,
+        title: email && email.subject ? email.subject : ''
+      });
+    };
+
+    return (
+      <TestEmailWrapper>
+        <FormGroup>
+          <ControlLabel>Send to the following email as test:</ControlLabel>
+          <HelpPopover>Only one email address must be typed</HelpPopover>
+          <FormControl
+            type="text"
+            onChange={onChange}
+            defaultValue={testEmail}
+          />
+          <Button
+            disabled={testEmail ? false : true}
+            btnStyle="primary"
+            icon="send"
+            onClick={sendAsTest}
+          >
+            Send
+          </Button>
+        </FormGroup>
+      </TestEmailWrapper>
+    );
+  }
+
   render() {
     const { attachments } = this.state.email;
 
@@ -248,6 +311,7 @@ class EmailForm extends React.Component<Props, State> {
           </FormGroup>
 
           {this.renderScheduler()}
+          {this.renderTestEmailSection()}
         </FlexPad>
 
         <FlexItem overflow="auto" count="2">
@@ -256,8 +320,8 @@ class EmailForm extends React.Component<Props, State> {
             <EditorCK
               content={this.state.content}
               onChange={this.onEditorChange}
-              insertItems={EMAIL_CONTENT}
               height={500}
+              name={`engage_email_${this.props.kind}_${this.props.fromUserId}`}
             />
           </EditorContainer>
         </FlexItem>

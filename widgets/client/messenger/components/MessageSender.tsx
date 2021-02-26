@@ -1,11 +1,12 @@
-import * as React from "react";
-import { iconAttach, iconVideo } from "../../icons/Icons";
-import { __ } from "../../utils";
-import { MESSAGE_TYPES } from "../containers/AppContext";
+import * as React from 'react';
+import { iconAttach, iconVideo } from '../../icons/Icons';
+import { __ } from '../../utils';
+import { MESSAGE_TYPES } from '../containers/AppContext';
 
 type Props = {
   placeholder?: string;
   conversationId: string | null;
+  inputDisabled: boolean;
   isAttachingFile: boolean;
   isParentFocused: boolean;
   sendMessage: (contentType: string, message: string) => void;
@@ -30,7 +31,7 @@ class MessageSender extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
 
-    this.state = { message: "" };
+    this.state = { message: '' };
 
     this.onSubmit = this.onSubmit.bind(this);
     this.handleMessageChange = this.handleMessageChange.bind(this);
@@ -85,12 +86,19 @@ class MessageSender extends React.Component<Props, State> {
   sendMessage() {
     this.clearTimeout();
     this.props.sendMessage(MESSAGE_TYPES.TEXT, this.state.message);
-    this.setState({ message: "" });
+    this.setState({ message: '' });
     this.setHeight(60);
   }
 
   onSubmit(e: React.FormEvent) {
     e.preventDefault();
+
+    const { conversationId, inputDisabled } = this.props;
+
+    if ((conversationId || '').length === 0 && inputDisabled) {
+      return;
+    }
+
     this.sendMessage();
   }
 
@@ -125,7 +133,7 @@ class MessageSender extends React.Component<Props, State> {
     const { onTextInputBlur, sendTypingInfo, conversationId } = this.props;
 
     if (conversationId) {
-      sendTypingInfo(conversationId, "");
+      sendTypingInfo(conversationId, '');
     }
 
     onTextInputBlur();
@@ -136,7 +144,7 @@ class MessageSender extends React.Component<Props, State> {
   }
 
   handleKeyPress(e: React.KeyboardEvent) {
-    if (e.key === "Enter" && !e.shiftKey) {
+    if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       this.sendMessage();
     }
@@ -153,7 +161,7 @@ class MessageSender extends React.Component<Props, State> {
   }
 
   sendVideoCallRequest = () => {
-    this.props.sendMessage(MESSAGE_TYPES.VIDEO_CALL_REQUEST, "");
+    this.props.sendMessage(MESSAGE_TYPES.VIDEO_CALL_REQUEST, '');
   };
 
   renderFileUploader() {
@@ -186,6 +194,8 @@ class MessageSender extends React.Component<Props, State> {
   }
 
   render() {
+    const { conversationId, inputDisabled } = this.props;
+
     return (
       <form
         className="erxes-message-sender"
@@ -202,6 +212,7 @@ class MessageSender extends React.Component<Props, State> {
           onBlur={this.handleOnBlur}
           onClick={this.handleClick}
           onKeyDown={this.handleKeyPress}
+          disabled={(conversationId || '').length > 0 ? false : inputDisabled}
         />
         <div className="ctrl">
           {this.renderVideoCallRequest()}

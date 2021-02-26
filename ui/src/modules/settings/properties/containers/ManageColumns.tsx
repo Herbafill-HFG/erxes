@@ -1,7 +1,6 @@
-import { getEnv } from 'apolloClient';
 import gql from 'graphql-tag';
 import * as compose from 'lodash.flowright';
-import { Alert, withProps } from 'modules/common/utils';
+import { Alert, getEnv, withProps } from 'modules/common/utils';
 import { queries } from 'modules/forms/graphql';
 import queryString from 'query-string';
 import React from 'react';
@@ -85,7 +84,8 @@ const ManageColumnsContainer = (props: FinalProps) => {
             ? JSON.stringify(checkedConfigsForExport)
             : checkedConfigsForImport,
         type: contentType,
-        importType
+        importType,
+        fromHistory: true
       });
 
       window.open(`${REACT_APP_API_URL}${reqUrl}?${stringified}`, '_blank');
@@ -135,10 +135,11 @@ export default withProps<Props>(
       gql(queries.fieldsCombinedByContentType),
       {
         name: 'fieldsQuery',
-        options: ({ contentType }) => {
+        options: ({ contentType, type }) => {
           return {
             variables: {
               contentType: contentType === 'lead' ? 'customer' : contentType,
+              usageType: type,
               excludedNames: [
                 'state',
                 'avatar',

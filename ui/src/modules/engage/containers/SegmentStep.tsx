@@ -21,17 +21,15 @@ type Props = {
   segmentIds: string[];
   messageType: string;
   onChange: (name: string, value: string[]) => void;
-  renderContent: (
-    {
-      actionSelector,
-      selectedComponent,
-      customerCounts
-    }: {
-      actionSelector: React.ReactNode;
-      selectedComponent: React.ReactNode;
-      customerCounts: React.ReactNode;
-    }
-  ) => React.ReactNode;
+  renderContent: ({
+    actionSelector,
+    selectedComponent,
+    customerCounts
+  }: {
+    actionSelector: React.ReactNode;
+    selectedComponent: React.ReactNode;
+    customerCounts: React.ReactNode;
+  }) => React.ReactNode;
 };
 
 type FinalProps = {
@@ -122,14 +120,16 @@ export default withProps<Props>(
         }
       }
     }),
-    graphql<Props, CountQueryResponse, { only: string }>(
+    graphql<Props, CountQueryResponse, { only: string; source: string }>(
       gql(queries.customerCounts),
       {
         name: 'customerCountsQuery',
         options: {
           variables: {
-            only: 'bySegment'
-          }
+            only: 'bySegment',
+            source: 'engages'
+          },
+          fetchPolicy: 'network-only'
         }
       }
     ),

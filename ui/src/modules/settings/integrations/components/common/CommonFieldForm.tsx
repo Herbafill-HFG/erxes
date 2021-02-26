@@ -1,22 +1,21 @@
-import { getEnv } from 'apolloClient';
 import Button from 'modules/common/components/Button';
 import FormControl from 'modules/common/components/form/Control';
 import FormGroup from 'modules/common/components/form/Group';
 import ControlLabel from 'modules/common/components/form/Label';
-import Info from 'modules/common/components/Info';
 import { ModalFooter } from 'modules/common/styles/main';
 import { __ } from 'modules/common/utils';
 import React from 'react';
+import { INTEGRATION_KINDS } from '../../constants';
 import SelectBrand from '../../containers/SelectBrand';
 import SelectChannels from '../../containers/SelectChannels';
-import { RefreshPermission } from '../../styles';
 
-const { REACT_APP_API_URL } = getEnv();
+import { IntegrationMutationVariables } from '../../types';
 
 type CommonTypes = {
   name: string;
   brandId: string;
   channelIds: string[];
+  webhookData: any;
 };
 
 type Props = {
@@ -25,7 +24,11 @@ type Props = {
   name: string;
   brandId: string;
   channelIds: string[];
-  onSubmit: (id: string, { name, brandId, channelIds }: CommonTypes) => void;
+  webhookData: any;
+  onSubmit: (
+    id: string,
+    { name, brandId, channelIds, data }: IntegrationMutationVariables
+  ) => void;
   closeModal: () => void;
 };
 
@@ -36,47 +39,69 @@ class CommonFieldForm extends React.PureComponent<Props, CommonTypes> {
     this.state = {
       name: props.name || '',
       brandId: props.brandId || '',
-      channelIds: props.channelIds || []
+      channelIds: props.channelIds || [],
+      webhookData: props.webhookData || {}
     };
   }
 
-  renderFacebookContent = () => {
-    const onRefresh = () => {
-      const link = 'fblogin';
-      const kind = 'facebook';
+  renderScript = () => {
+    const { integrationKind } = this.props;
 
-      const url = `${REACT_APP_API_URL}/connect-integration?link=${link}&kind=${kind}`;
+    if (integrationKind !== INTEGRATION_KINDS.WEBHOOK) {
+      return null;
+    }
 
-      window.location.replace(url);
+    const { webhookData } = this.state;
+
+    const onChangeWebhookData = e => {
+      webhookData[e.target.name] = e.target.value;
+
+      this.setState({
+        webhookData: { ...webhookData }
+      });
     };
 
     return (
       <>
-        <Info>
-          {__(
-            'Page permissions can be dropped by Messenger platform if the admin of the page changes their account password or due to some other unexpected reason. In case of any trouble with message sending, or in using some other service, please refresh your permissions using the below button.'
-          )}
-          <RefreshPermission onClick={onRefresh}>
-            Refresh permissions
-          </RefreshPermission>
-        </Info>
+        <FormGroup>
+          <ControlLabel required={false}>Token</ControlLabel>
+          <FormControl
+            name="token"
+            required={false}
+            autoFocus={false}
+            defaultValue={webhookData.token}
+            onChange={onChangeWebhookData}
+          />
+        </FormGroup>
+
+        <FormGroup>
+          <ControlLabel required={false}>Origin</ControlLabel>
+          <FormControl
+            name="origin"
+            required={false}
+            autoFocus={false}
+            defaultValue={webhookData.origin}
+            onChange={onChangeWebhookData}
+          />
+        </FormGroup>
+
+        <FormGroup>
+          <ControlLabel required={false}>{__('Script')}</ControlLabel>
+          <FormControl
+            name="script"
+            componentClass="textarea"
+            required={true}
+            defaultValue={webhookData.script}
+            onChange={onChangeWebhookData}
+          />
+        </FormGroup>
       </>
     );
   };
 
-  renderSpecificContent = () => {
-    const { integrationKind } = this.props;
-
-    if (integrationKind && integrationKind.includes('facebook')) {
-      return this.renderFacebookContent();
-    }
-
-    return;
-  };
-
   render() {
     const { integrationId, onSubmit, closeModal } = this.props;
-    const { name, brandId, channelIds } = this.state;
+    const { name, brandId, channelIds, webhookData } = this.state;
 
     const onBrandChange = e => {
       this.setState({ brandId: e.target.value });
@@ -93,7 +118,17 @@ class CommonFieldForm extends React.PureComponent<Props, CommonTypes> {
     const saveIntegration = e => {
       e.preventDefault();
 
-      onSubmit(integrationId, { name, brandId, channelIds });
+      let data;
+
+      switch (this.props.integrationKind) {
+        case 'webhook': {
+          data = webhookData;
+
+          break;
+        }
+      }
+
+      onSubmit(integrationId, { name, brandId, channelIds, data });
       closeModal();
     };
 
@@ -108,6 +143,8 @@ class CommonFieldForm extends React.PureComponent<Props, CommonTypes> {
             autoFocus={true}
           />
         </FormGroup>
+
+        {this.renderScript()}
 
         <SelectBrand
           isRequired={true}
@@ -124,7 +161,6 @@ class CommonFieldForm extends React.PureComponent<Props, CommonTypes> {
           onChange={onChannelChange}
         />
 
-        {this.renderSpecificContent()}
         <ModalFooter>
           <Button
             btnStyle="simple"

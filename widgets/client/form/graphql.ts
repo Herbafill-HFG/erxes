@@ -21,8 +21,8 @@ export const formDetailQuery = `
 `;
 
 export const formConnectMutation = `
-  mutation widgetsLeadConnect($brandCode: String!, $formCode: String!) {
-    widgetsLeadConnect(brandCode: $brandCode, formCode: $formCode) {
+  mutation widgetsLeadConnect($brandCode: String!, $formCode: String!, $cachedCustomerId: String) {
+    widgetsLeadConnect(brandCode: $brandCode, formCode: $formCode, cachedCustomerId:$cachedCustomerId) {
       form {
         _id
         title
@@ -42,6 +42,7 @@ export const saveFormMutation = `
     widgetsSaveLead(integrationId: $integrationId, formId: $formId, submissions: $submissions, browserInfo: $browserInfo, cachedCustomerId: $cachedCustomerId) {
       status
       messageId
+      customerId
       errors {
         fieldId
         code
@@ -52,8 +53,8 @@ export const saveFormMutation = `
 `;
 
 export const sendEmailMutation = `
-  mutation widgetsSendEmail($toEmails: [String], $fromEmail: String, $title: String, $content: String) {
-    widgetsSendEmail(toEmails: $toEmails, fromEmail: $fromEmail, title: $title, content: $content)
+  mutation widgetsSendEmail($toEmails: [String], $fromEmail: String, $title: String, $content: String, $customerId: String, $formId: String) {
+    widgetsSendEmail(toEmails: $toEmails, fromEmail: $fromEmail, title: $title, content: $content, customerId: $customerId, formId: $formId)
   }
 `;
 

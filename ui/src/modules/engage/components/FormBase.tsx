@@ -6,16 +6,14 @@ import { IEngageMessageDoc } from '../types';
 
 type Props = {
   kind: string;
-  content: (
-    params: {
-      renderTitle: () => string;
-      breadcrumbs: IBreadCrumbItem[];
-      validateDoc: (
-        type: string,
-        doc: IEngageMessageDoc
-      ) => { status: string; doc?: IEngageMessageDoc };
-    }
-  ) => any;
+  content: (params: {
+    renderTitle: () => string;
+    breadcrumbs: IBreadCrumbItem[];
+    validateDoc: (
+      type: string,
+      doc: IEngageMessageDoc
+    ) => { status: string; doc?: IEngageMessageDoc };
+  }) => any;
 };
 
 class FormBase extends React.Component<Props> {
@@ -98,14 +96,14 @@ class FormBase extends React.Component<Props> {
   renderTitle() {
     const { kind } = this.props;
 
-    let title = __('Auto message');
+    let title = __('Auto campaign');
 
     if (kind === 'manual') {
-      title = __('Manual message');
+      title = __('Manual campaign');
     }
 
     if (kind === 'visitorAuto') {
-      title = __('Visitor auto message');
+      title = __('Visitor auto campaign');
     }
 
     return title;
@@ -113,7 +111,7 @@ class FormBase extends React.Component<Props> {
 
   render() {
     const breadcrumbs = [
-      { title: __('Engage'), link: '/engage' },
+      { title: __('Campaigns'), link: '/campaigns' },
       { title: this.renderTitle() }
     ];
 

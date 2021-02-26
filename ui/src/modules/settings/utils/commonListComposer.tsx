@@ -26,7 +26,8 @@ function commonListComposer<ComponentProps>(options) {
     gqlRemoveMutation,
     gqlCopyMutation,
     ListComponent,
-    gqlConfigsQuery
+    gqlConfigsQuery,
+    confirmProps
   } = options;
 
   type Props = {
@@ -35,16 +36,16 @@ function commonListComposer<ComponentProps>(options) {
     history: any;
     addMutation: ({ variables }: { variables: any }) => Promise<any>;
     editMutation: ({ variables }: { variables: any }) => Promise<any>;
-    removeMutation: (
-      {
-        variables: { _id }
-      }: { variables: IRemoveMutationVariables }
-    ) => Promise<any>;
-    copyMutation: (
-      {
-        variables: { _id, memberIds }
-      }: { variables: ICopyMutationVariables }
-    ) => Promise<any>;
+    removeMutation: ({
+      variables: { _id }
+    }: {
+      variables: IRemoveMutationVariables;
+    }) => Promise<any>;
+    copyMutation: ({
+      variables: { _id, memberIds }
+    }: {
+      variables: ICopyMutationVariables;
+    }) => Promise<any>;
     copy: boolean;
   };
 
@@ -63,7 +64,15 @@ function commonListComposer<ComponentProps>(options) {
 
     // remove action
     const remove = id => {
-      confirm().then(() => {
+      let message;
+      let confirmOptions = {};
+
+      if (confirmProps) {
+        message = confirmProps.message;
+        confirmOptions = confirmProps.options;
+      }
+
+      confirm(message, confirmOptions).then(() => {
         removeMutation({
           variables: { _id: id }
         })
@@ -169,11 +178,7 @@ function commonListComposer<ComponentProps>(options) {
   }
 
   return withProps<ComponentProps>(
-    compose(
-      ...composeAttr,
-      gqlListQuery,
-      gqlTotalCountQuery
-    )(ListContainer)
+    compose(...composeAttr, gqlListQuery, gqlTotalCountQuery)(ListContainer)
   );
 }
 

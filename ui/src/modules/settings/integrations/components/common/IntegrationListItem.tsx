@@ -1,3 +1,5 @@
+import client from 'apolloClient';
+import gql from 'graphql-tag';
 import ActionButtons from 'modules/common/components/ActionButtons';
 import Button from 'modules/common/components/Button';
 import Icon from 'modules/common/components/Icon';
@@ -5,20 +7,24 @@ import Label from 'modules/common/components/Label';
 import ModalTrigger from 'modules/common/components/ModalTrigger';
 import Tip from 'modules/common/components/Tip';
 import WithPermission from 'modules/common/components/WithPermission';
+import { Alert, getEnv } from 'modules/common/utils';
 import { __ } from 'modules/common/utils';
 import InstallCode from 'modules/settings/integrations/components/InstallCode';
 import { INTEGRATION_KINDS } from 'modules/settings/integrations/constants';
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { cleanIntegrationKind } from '../../containers/utils';
+import { queries } from '../../graphql/index';
 import { INTEGRATIONS_COLORS } from '../../integrationColors';
 import { IIntegration, IntegrationMutationVariables } from '../../types';
+import RefreshPermissionForm from '../facebook/RefreshPermission';
 import CommonFieldForm from './CommonFieldForm';
 
 type Props = {
   _id?: string;
   integration: IIntegration;
   archive: (id: string, status: boolean) => void;
+  repair: (id: string) => void;
   removeIntegration: (integration: IIntegration) => void;
   disableAction?: boolean;
   editIntegration: (
@@ -27,7 +33,19 @@ type Props = {
   ) => void;
 };
 
-class IntegrationListItem extends React.Component<Props> {
+type State = {
+  externalData: any;
+};
+
+class IntegrationListItem extends React.Component<Props, State> {
+  constructor(props) {
+    super(props);
+
+    this.state = {
+      externalData: null
+    };
+  }
+
   renderArchiveAction() {
     const { archive, integration, disableAction } = this.props;
 
@@ -64,6 +82,49 @@ class IntegrationListItem extends React.Component<Props> {
     );
   }
 
+  renderGetAction() {
+    const { integration } = this.props;
+    const webhookData = integration.webhookData;
+
+    if (!webhookData) {
+      return;
+    }
+
+    const showTrigger = (
+      <Button btnStyle="link">
+        <Tip text="Show" placement="top">
+          <Icon icon="eye" />
+        </Tip>
+      </Button>
+    );
+
+    const content = () => {
+      const { REACT_APP_API_URL } = getEnv();
+
+      return (
+        <div>
+          <b>Name</b>: {integration.name} <br />
+          <div>
+            <b>URL</b>: {REACT_APP_API_URL}/webhooks/{integration._id} <br />
+            <b>Token</b>: {webhookData.token}
+          </div>
+        </div>
+      );
+    };
+
+    return (
+      <WithPermission action="showIntegrations">
+        <ActionButtons>
+          <ModalTrigger
+            title="Integration detail"
+            trigger={showTrigger}
+            content={content}
+          />
+        </ActionButtons>
+      </WithPermission>
+    );
+  }
+
   renderEditAction() {
     const { integration, editIntegration } = this.props;
 
@@ -88,6 +149,7 @@ class IntegrationListItem extends React.Component<Props> {
         channelIds={integration.channels.map(item => item._id) || []}
         integrationId={integration._id}
         integrationKind={integration.kind}
+        webhookData={integration.webhookData}
       />
     );
 
@@ -162,11 +224,134 @@ class IntegrationListItem extends React.Component<Props> {
     );
   }
 
+  renderRepairAction() {
+    const { repair, integration } = this.props;
+
+    if (!integration.kind.includes('facebook')) {
+      return null;
+    }
+
+    const onClick = () => repair(integration._id);
+
+    if (
+      integration.healthStatus &&
+      integration.healthStatus.status === 'account-token'
+    ) {
+      const editTrigger = (
+        <Button btnStyle="link">
+          <Tip text={__('Repair')} placement="top">
+            <Icon icon="refresh" />
+          </Tip>
+        </Button>
+      );
+
+      const content = props => <RefreshPermissionForm {...props} />;
+
+      return (
+        <ActionButtons>
+          <ModalTrigger
+            title="Edit integration"
+            trigger={editTrigger}
+            content={content}
+          />
+        </ActionButtons>
+      );
+    } else {
+      return (
+        <Tip text={__('Repair')} placement="top">
+          <Button btnStyle="link" onClick={onClick} icon="refresh" />
+        </Tip>
+      );
+    }
+  }
+
+  renderExternalData(integration) {
+    const { externalData } = this.state;
+    const { kind } = integration;
+    let value = '';
+
+    if (!externalData) {
+      return <td />;
+    }
+
+    switch (kind) {
+      case INTEGRATION_KINDS.CALLPRO:
+        value = externalData.phoneNumber;
+        break;
+      case INTEGRATION_KINDS.CHATFUEL:
+        value = (externalData.chatfuelConfigs || {}).toString();
+        break;
+      case INTEGRATION_KINDS.WHATSAPP:
+        value = externalData.whatsappToken;
+        break;
+      case INTEGRATION_KINDS.SMOOCH_TELEGRAM:
+        value = externalData.telegramBotToken;
+        break;
+      case INTEGRATION_KINDS.SMOOCH_VIBER:
+        value = externalData.viberBotToken;
+        break;
+      case INTEGRATION_KINDS.SMOOCH_LINE:
+        value = externalData.lineChannelId;
+        break;
+      case INTEGRATION_KINDS.TELNYX:
+        value = externalData.telnyxPhoneNumber;
+        break;
+      default:
+        break;
+    }
+
+    return <td>{value}</td>;
+  }
+
+  renderFetchAction(integration: IIntegration) {
+    if (
+      integration.kind === INTEGRATION_KINDS.MESSENGER ||
+      integration.kind.includes('facebook')
+    ) {
+      return null;
+    }
+
+    const onClick = () => {
+      client
+        .query({
+          query: gql(queries.fetchApi),
+          variables: {
+            path: '/integrationDetail',
+            params: { erxesApiId: integration._id }
+          }
+        })
+        .then(({ data }) => {
+          this.setState({ externalData: data.integrationsFetchApi });
+        })
+        .catch(e => {
+          Alert.error(e.message);
+        });
+    };
+
+    return (
+      <Tip text={__('Fetch external data')} placement="top">
+        <Button btnStyle="link" icon="download-1" onClick={onClick} />
+      </Tip>
+    );
+  }
+
   render() {
     const { integration } = this.props;
     const integrationKind = cleanIntegrationKind(integration.kind);
-    const labelStyle = integration.isActive ? 'success' : 'warning';
+
+    const healthStatus = integration.healthStatus
+      ? integration.healthStatus.status
+      : '';
+
+    const error = integration.healthStatus
+      ? integration.healthStatus.error
+      : '';
+
+    const labelStyle = integration.isActive ? 'success' : 'error';
     const status = integration.isActive ? __('Active') : __('Archived');
+    const labelStyleHealthy = healthStatus === 'healthy' ? 'success' : 'danger';
+    const healthStatusText =
+      healthStatus === 'healthy' ? __('Healthy') : __('Unhealthy');
 
     return (
       <tr key={integration._id}>
@@ -181,8 +366,17 @@ class IntegrationListItem extends React.Component<Props> {
           <Label lblStyle={labelStyle}>{status}</Label>
         </td>
         <td>
+          <Tip text={error}>
+            <Label lblStyle={labelStyleHealthy}>{healthStatusText}</Label>
+          </Tip>
+        </td>
+        {this.renderExternalData(integration)}
+        <td>
           <ActionButtons>
+            {this.renderFetchAction(integration)}
             {this.renderMessengerActions(integration)}
+            {this.renderGetAction()}
+            {this.renderRepairAction()}
             {this.renderEditAction()}
             {this.renderArchiveAction()}
             {this.renderUnarchiveAction()}

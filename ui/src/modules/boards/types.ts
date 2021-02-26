@@ -1,4 +1,12 @@
-import { IAttachment } from 'modules/common/types';
+import {
+  BoardsQueryResponse as BoardsQueryResponseC,
+  IBoard as IBoardC,
+  IPipeline as IPipelineC,
+  IStage as IStageC,
+  PipelinesQueryResponse as PipelinesQueryResponseC,
+  StagesQueryResponse as StagesQueryResponseC
+} from 'erxes-ui/lib/boards/types';
+import { IAttachment, QueryResponse } from 'modules/common/types';
 import { ISavedConformity } from 'modules/conformity/types';
 import { IUser } from '../auth/types';
 import { ICompany } from '../companies/types';
@@ -52,11 +60,7 @@ export interface IOptions {
   getExtraParams: (queryParams: any) => any;
 }
 
-export interface IBoard {
-  _id: string;
-  name: string;
-  pipelines?: IPipeline[];
-}
+export type IBoard = IBoardC;
 
 export interface IItemParams {
   _id?: string;
@@ -79,49 +83,20 @@ export interface IItemParams {
 }
 
 export type SaveItemMutation = ({ variables: IItemParams }) => Promise<any>;
-export type RemoveStageMutation = (
-  { variables }: { variables: { _id: string } }
-) => Promise<any>;
+export type RemoveStageMutation = ({
+  variables
+}: {
+  variables: { _id: string };
+}) => Promise<any>;
 
-export interface IPipeline {
-  _id: string;
-  name: string;
-  boardId: string;
-  visibility: string;
-  members?: IUser[];
-  memberIds?: string[];
-  bgColor?: string;
-  isWatched: boolean;
-  startDate?: Date;
-  endDate?: Date;
-  metric?: string;
-  hackScoringType?: string;
-  templateId?: string;
-  state?: string;
-  itemsTotalCount?: number;
-  isCheckUser?: boolean;
-  excludeCheckUserIds?: string[];
-}
+export type IPipeline = IPipelineC;
 
 interface IStageComparisonInfo {
   count: number;
   percent: number;
 }
 
-export interface IStage {
-  _id: string;
-  name: string;
-  type: string;
-  probability: string;
-  index?: number;
-  itemId?: string;
-  amount?: any;
-  itemsTotalCount: number;
-  formId: string;
-  pipelineId: string;
-  status: string;
-  order: number;
-}
+export type IStage = IStageC;
 
 export interface IConversionStage extends IStage {
   initialDealsTotalCount: number;
@@ -205,11 +180,7 @@ export interface IItemMap {
   [key: string]: IItem[];
 }
 
-export type BoardsQueryResponse = {
-  boards: IBoard[];
-  loading: boolean;
-  refetch: () => void;
-};
+export type BoardsQueryResponse = BoardsQueryResponseC;
 
 export interface IBoardCount {
   _id: string;
@@ -219,23 +190,11 @@ export interface IBoardCount {
 
 export type BoardCountsQueryResponse = {
   boardCounts: IBoardCount[];
-  loading: boolean;
-  refetch: () => void;
-};
+} & QueryResponse;
 
-export type PipelinesQueryResponse = {
-  pipelines: IPipeline[];
-  loading: boolean;
-  refetch: (
-    { boardId, type }: { boardId?: string; type?: string }
-  ) => Promise<any>;
-};
+export type PipelinesQueryResponse = PipelinesQueryResponseC;
 
-export type StagesQueryResponse = {
-  stages: IStage[];
-  loading: boolean;
-  refetch: ({ pipelineId }: { pipelineId?: string }) => Promise<any>;
-};
+export type StagesQueryResponse = StagesQueryResponseC;
 
 export type ConversionStagesQueryResponse = {
   stages: IConversionStage[];
@@ -282,9 +241,9 @@ export type UpdateTimeVariables = {
 
 export type RemoveMutation = ({ variables: RemoveVariables }) => Promise<any>;
 
-export type UpdateTimeTrackMutation = (
-  { variables: UpdateTimeVariables }
-) => Promise<any>;
+export type UpdateTimeTrackMutation = ({
+  variables: UpdateTimeVariables
+}) => Promise<any>;
 
 export type CopyVariables = {
   _id: string;
@@ -294,56 +253,44 @@ export type CopyVariables = {
 export type CopyMutation = ({ variables: CopyVariables }) => Promise<any>;
 
 export type ItemsQueryResponse = {
-  loading: boolean;
-  refetch: () => void;
   fetchMore: any;
-};
+} & QueryResponse;
 
 export type RelatedItemsQueryResponse = {
-  loading: boolean;
-  refetch: () => void;
   fetchMore: any;
-};
+} & QueryResponse;
 
 export type DetailQueryResponse = {
-  loading: boolean;
   error?: Error;
   subscribeToMore: any;
-  refetch: () => void;
-};
+} & QueryResponse;
 
 // query response
 export type PipelineLabelsQueryResponse = {
   pipelineLabels: IPipelineLabel[];
-  loading: boolean;
-  refetch: () => void;
-};
+} & QueryResponse;
 
 export type PipelineLabelDetailQueryResponse = {
   pipelineLabelDetail: IPipelineLabel;
-  loading: boolean;
-  refetch: () => void;
-};
+} & QueryResponse;
 
 // mutation response
-export type AddPipelineLabelMutationResponse = (
-  { variables: IPipelineLabelVariables }
-) => Promise<any>;
+export type AddPipelineLabelMutationResponse = ({
+  variables: IPipelineLabelVariables
+}) => Promise<any>;
 
-export type EditPipelineLabelMutationResponse = (
-  { variables: EditMutationVariables }
-) => Promise<any>;
+export type EditPipelineLabelMutationResponse = ({
+  variables: EditMutationVariables
+}) => Promise<any>;
 
 export type RemovePipelineLabelMutationVariables = {
   _id: string;
 };
 
 export type RemovePipelineLabelMutationResponse = {
-  removeMutation: (
-    params: {
-      variables: RemovePipelineLabelMutationVariables;
-    }
-  ) => Promise<void>;
+  removeMutation: (params: {
+    variables: RemovePipelineLabelMutationVariables;
+  }) => Promise<void>;
 };
 
 export type PipelineLabelMutationVariables = {
@@ -353,11 +300,9 @@ export type PipelineLabelMutationVariables = {
 };
 
 export type PipelineLabelMutationResponse = {
-  pipelineLabelMutation: (
-    params: {
-      variables: PipelineLabelMutationVariables;
-    }
-  ) => Promise<any>;
+  pipelineLabelMutation: (params: {
+    variables: PipelineLabelMutationVariables;
+  }) => Promise<any>;
 };
 
 export interface IFilterParams extends ISavedConformity {

@@ -11,9 +11,11 @@ type Props = {
   message: IMessage;
   integrationId: string;
   conversationId?: string;
+  customerId?: string;
   kind: string;
   isLast: boolean;
   brandId?: string;
+  mails: IMessage[];
 };
 
 type State = {
@@ -98,7 +100,14 @@ class Mail extends React.PureComponent<Props, State> {
       return null;
     }
 
-    const { conversationId, message, integrationId, brandId } = this.props;
+    const {
+      conversationId,
+      message,
+      integrationId,
+      customerId,
+      brandId,
+      mails
+    } = this.props;
 
     return (
       <BoxItem>
@@ -109,11 +118,14 @@ class Mail extends React.PureComponent<Props, State> {
           closeReply={this.closeReply}
           createdAt={message.createdAt}
           conversationId={conversationId}
+          customerId={customerId}
           toggleReply={this.toggleReply}
           integrationId={integrationId}
           refetchQueries={['detailQuery']}
           mailData={mailData}
           brandId={brandId}
+          mails={mails}
+          messageId={message._id}
         />
       </BoxItem>
     );

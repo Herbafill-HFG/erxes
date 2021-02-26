@@ -37,6 +37,7 @@ const commonFields = `
   messenger
   email
   smsStats
+  createdUser
 
   totalCustomersCount
   validCustomersCount
@@ -54,6 +55,11 @@ const commonFields = `
     from
     content
     fromIntegrationId
+  }
+
+  scheduleDate {
+    type
+    dateTime
   }
 `;
 
@@ -89,6 +95,7 @@ export const engageDetailFields = `
     type
     month
     day
+    dateTime
   }
   brand {
     name
@@ -162,6 +169,7 @@ const customerCounts = `
     $brand: String,
     $tag: String,
     $ids: [String],
+    $source: String,
     $only: String
   ) {
     customerCounts(
@@ -171,6 +179,7 @@ const customerCounts = `
       brand: $brand,
       tag: $tag,
       ids: $ids,
+      source: $source,
       only: $only
     )
   }
@@ -271,6 +280,21 @@ const verifiedEmails = `
   }
 `;
 
+const engageEmailPercentages = `
+  query engageEmailPercentages {
+    engageEmailPercentages {
+      avgBouncePercent
+      avgClickPercent
+      avgComplaintPercent
+      avgDeliveryPercent
+      avgOpenPercent
+      avgRejectPercent
+      avgRenderingFailurePercent
+      avgSendPercent
+    }
+  }
+`;
+
 export default {
   engageMessages,
   engageMessagesTotalCount,
@@ -288,5 +312,6 @@ export default {
   statusCounts,
   tagCounts,
   tags,
-  verifiedEmails
+  verifiedEmails,
+  engageEmailPercentages
 };

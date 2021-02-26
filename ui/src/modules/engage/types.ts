@@ -1,4 +1,4 @@
-import { IConditionsRule } from 'modules/common/types';
+import { IConditionsRule, QueryResponse } from 'modules/common/types';
 import { IEmailTemplate } from 'modules/settings/emailTemplates/types';
 import { IIntegration } from 'modules/settings/integrations/types';
 import { IUser } from '../auth/types';
@@ -11,6 +11,7 @@ export type IEngageScheduleDate = {
   type: string;
   month: string;
   day: string;
+  dateTime: string;
 } | null;
 
 export interface IEngageMessenger {
@@ -59,6 +60,14 @@ export interface IEngageSmsStats {
   delivery_unconfirmed: number;
 }
 
+export interface IDeliveryReport {
+  _id: string;
+  engageMessageId: string;
+  customerId: string;
+  status: string;
+  createdAt: string;
+}
+
 export interface IEmailDelivery {
   _id: string;
   subject: string;
@@ -71,6 +80,9 @@ export interface IEmailDelivery {
   kind: string;
   userId: string;
   customerId: string;
+
+  status?: string;
+  createdAt?: string;
 
   fromUser: IUser;
   fromEmail: string;
@@ -111,10 +123,10 @@ export interface IEngageMessage extends IEngageMessageDoc {
   logs?: Array<{ message: string }>;
   smsStats?: IEngageSmsStats;
   fromIntegration?: IIntegration;
+  createdUser: string;
 }
 
 // mutation types
-
 export type MutationVariables = {
   _id: string;
 };
@@ -131,10 +143,14 @@ export type SetLiveMutationResponse = {
   setLiveMutation: (params: { variables: MutationVariables }) => Promise<void>;
 };
 
+export type CopyMutationResponse = {
+  copyMutation: (params: { variables: MutationVariables }) => Promise<void>;
+};
+
 export type SetLiveManualMutationResponse = {
-  setLiveManualMutation: (
-    params: { variables: MutationVariables }
-  ) => Promise<void>;
+  setLiveManualMutation: (params: {
+    variables: MutationVariables;
+  }) => Promise<void>;
 };
 
 export type WithFormMutationVariables = {
@@ -147,23 +163,18 @@ export type WithFormMutationVariables = {
 };
 
 export type WithFormAddMutationResponse = {
-  addMutation: (
-    params: {
-      variables: WithFormMutationVariables;
-    }
-  ) => Promise<any>;
+  addMutation: (params: {
+    variables: WithFormMutationVariables;
+  }) => Promise<any>;
 };
 
 export type WithFormEditMutationResponse = {
-  editMutation: (
-    params: {
-      variables: WithFormMutationVariables;
-    }
-  ) => Promise<any>;
+  editMutation: (params: {
+    variables: WithFormMutationVariables;
+  }) => Promise<any>;
 };
 
 // query types
-
 export type EngageMessageDetailQueryResponse = {
   engageMessageDetail: IEngageMessage;
   error: Error;
@@ -173,9 +184,7 @@ export type EngageMessageDetailQueryResponse = {
 export type EngageVerifiedEmailsQueryResponse = {
   engageVerifiedEmails: string[];
   error: Error;
-  loading: boolean;
-  refetch: () => void;
-};
+} & QueryResponse;
 
 export type ListQueryVariables = {
   page?: number;
@@ -188,15 +197,11 @@ export type ListQueryVariables = {
 
 export type EngageMessagesQueryResponse = {
   engageMessages: IEngageMessage[];
-  loading: boolean;
-  refetch: () => void;
-};
+} & QueryResponse;
 
 export type EngageMessagesTotalCountQueryResponse = {
   engageMessagesTotalCount: number;
-  loading: boolean;
-  refetch: () => void;
-};
+} & QueryResponse;
 
 export type EngageMessageCounts = {
   all: number;
@@ -214,14 +219,14 @@ export type CountQueryResponse = {
 };
 
 export type AddMutationResponse = {
-  messagesAddMutation: (
-    params: { variables: IEngageMessageDoc }
-  ) => Promise<any>;
+  messagesAddMutation: (params: {
+    variables: IEngageMessageDoc;
+  }) => Promise<any>;
 };
 
-export type TagAdd = (
-  params: { doc: { name: string; description: string } }
-) => void;
+export type TagAdd = (params: {
+  doc: { name: string; description: string };
+}) => void;
 export type SegmentAdd = (params: { doc: ISegmentDoc }) => void;
 
 export type TargetCount = {
@@ -245,9 +250,7 @@ export type IEmailFormProps = {
 
 export type EngageConfigQueryResponse = {
   engagesConfigDetail: Array<{ code: string; value: string }>;
-  loading: boolean;
-  refetch: () => void;
-};
+} & QueryResponse;
 
 export interface IIntegrationWithPhone {
   _id: string;

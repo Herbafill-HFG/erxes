@@ -15,9 +15,9 @@ import Toggle from 'modules/common/components/Toggle';
 import { IButtonMutateProps } from 'modules/common/types';
 import { router } from 'modules/common/utils';
 import { __ } from 'modules/common/utils';
-import { FlexItem, FlexRow } from 'modules/insights/styles';
 import SelectBrands from 'modules/settings/brands/containers/SelectBrands';
 import { IUserGroup } from 'modules/settings/permissions/types';
+import { FlexItem, FlexRow } from 'modules/settings/styles';
 import React from 'react';
 import { Link } from 'react-router-dom';
 import Select from 'react-select-plus';
@@ -136,7 +136,6 @@ class UserList extends React.Component<FinalProps, States> {
 
     return (
       <ModalTrigger
-        size="lg"
         title="Reset member password"
         trigger={editTrigger}
         content={content}
@@ -245,7 +244,7 @@ class UserList extends React.Component<FinalProps, States> {
         <SelectBrands
           label={__('Choose brands')}
           onSelect={onSelect}
-          value={queryParams.brandIds}
+          initialValue={queryParams.brandIds}
           name="selectedBrands"
         />
       </FlexItem>
@@ -260,7 +259,7 @@ class UserList extends React.Component<FinalProps, States> {
           <FlexItem>
             <ControlLabel>{__('Search')}</ControlLabel>
             <FormControl
-              placeholder="Search"
+              placeholder={__('Search')}
               name="searchValue"
               onChange={this.search}
               value={this.state.searchValue}
@@ -320,7 +319,7 @@ class UserList extends React.Component<FinalProps, States> {
   render() {
     return (
       <List
-        formTitle="Invite team members"
+        formTitle={__('Invite team members')}
         size="lg"
         breadcrumb={[
           { title: __('Settings'), link: '/settings' },

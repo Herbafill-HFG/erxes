@@ -281,7 +281,9 @@ export const RABBITMQ_QUEUES = {
   PUT_LOG: 'putLog',
   RPC_API_TO_INTEGRATIONS: 'rpc_queue:api_to_integrations',
   RPC_API_TO_WORKERS: 'rpc_queue:api_to_workers',
-  WORKERS: 'workers'
+  WORKERS: 'workers',
+  VISITOR_LOG: 'visitorLog',
+  RPC_VISITOR_LOG: 'rpc_queue:visitorLog'
 };
 
 export const AUTO_BOT_MESSAGES = {
@@ -291,4 +293,26 @@ export const AUTO_BOT_MESSAGES = {
 
 export const BOT_MESSAGE_TYPES = {
   SAY_SOMETHING: 'say_something'
+};
+
+export const AWS_EMAIL_STATUSES = {
+  SEND: 'send',
+  DELIVERY: 'delivery',
+  OPEN: 'open',
+  CLICK: 'click',
+  COMPLAINT: 'complaint',
+  BOUNCE: 'bounce',
+  RENDERING_FAILURE: 'renderingfailure',
+  REJECT: 'reject'
+};
+
+export const EMAIL_VALIDATION_STATUSES = {
+  VALID: 'valid',
+  INVALID: 'invalid',
+  ACCEPT_ALL_UNVERIFIABLE: 'accept_all_unverifiable',
+  UNVERIFIABLE: 'unverifiable',
+  UNKNOWN: 'unknown',
+  DISPOSABLE: 'disposable',
+  CATCH_ALL: 'catchall',
+  BAD_SYNTAX: 'badsyntax'
 };

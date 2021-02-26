@@ -163,8 +163,9 @@ describe('dashboardQueries', () => {
       'pipelineName',
       'modifiedBy',
       'integrationName',
-      'Customers.state',
-      'brand'
+      'Contacts.state',
+      'brand',
+      'test'
     ];
 
     types.map(async type => {

@@ -1,6 +1,6 @@
 import * as dotenv from 'dotenv';
 import * as Random from 'meteor-random';
-import { debugEngages } from './debuggers';
+import { debugEngages, debugError } from './debuggers';
 import { Logs, SmsRequests, Stats } from './models';
 import { getTelnyxInfo } from './telnyxUtils';
 import {
@@ -174,11 +174,13 @@ export const start = async (data: {
 
     // replace customer attributes =====
     let replacedContent = content;
+    let replacedSubject = subject;
 
     if (customer.replacers) {
       for (const replacer of customer.replacers) {
         const regex = new RegExp(replacer.key, 'gi');
         replacedContent = replacedContent.replace(regex, replacer.value);
+        replacedSubject = replacedSubject.replace(regex, replacer.value);
       }
     }
 
@@ -189,7 +191,7 @@ export const start = async (data: {
         from: `${sender || ''} <${fromEmail}>`,
         to: customer.primaryEmail,
         replyTo,
-        subject,
+        subject: replacedSubject,
         attachments: mailAttachment,
         html: replacedContent,
         headers: {
@@ -203,7 +205,7 @@ export const start = async (data: {
       debugEngages(msg);
       await Logs.createLog(engageMessageId, 'success', msg);
     } catch (e) {
-      debugEngages(e.message);
+      debugError(e.message);
       await Logs.createLog(
         engageMessageId,
         'failure',

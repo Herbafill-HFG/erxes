@@ -55,7 +55,7 @@ import {
   Users,
   UsersGroups
 } from '../db/models/index';
-import { debugBase } from '../debuggers';
+import { debugError } from '../debuggers';
 import messageBroker from '../messageBroker';
 import { callAfterMutation } from '../pluginUtils';
 import { MODULE_NAMES, RABBITMQ_QUEUES } from './constants';
@@ -1483,14 +1483,35 @@ export const sendToVisitorLog = async (params: IVisitorLogParams, action) => {
 
     throw new Error('Logger api is not running');
   } catch (e) {
-    debugBase('Logger is not running. Error: ', e.message);
+    debugError('Logger is not running. Error: ', e.message);
     throw new Error(e.message);
   }
 };
 
 export const getVisitorLog = async visitorId => {
-  return await messageBroker().sendRPCMessage(RABBITMQ_QUEUES.RPC_VISITOR_LOG, {
-    action: 'get',
-    data: { visitorId }
-  });
+  const LOGS_DOMAIN = getSubServiceDomain({ name: 'LOGS_API_DOMAIN' });
+  try {
+    const response = await sendRequest(
+      {
+        url: `${LOGS_DOMAIN}/health`,
+        method: 'get'
+      },
+      'Failed to connect to logs api. Check whether LOGS_API_DOMAIN env is missing or logs api is not running'
+    );
+
+    if (response === 'ok') {
+      return await messageBroker().sendRPCMessage(
+        RABBITMQ_QUEUES.RPC_VISITOR_LOG,
+        {
+          action: 'get',
+          data: { visitorId }
+        }
+      );
+    }
+
+    throw new Error('Logger api is not running');
+  } catch (e) {
+    debugError('Logger is not running. Error: ', e.message);
+    throw new Error(e.message);
+  }
 };
